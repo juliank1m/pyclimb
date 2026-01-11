@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pyclimb Problems</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --ink: #222013;
+        --accent: #d46b1a;
+        --card: #ffffff;
+        --muted: #6c6555;
+        --ring: rgba(212, 107, 26, 0.3);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Garamond", "Times New Roman", serif;
+        color: var(--ink);
+        background: radial-gradient(1200px 600px at 10% 0%, #fff4de 0%, var(--bg) 60%);
+      }
+      header {
+        padding: 48px 24px 12px;
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2.2rem, 4vw, 3.5rem);
+        letter-spacing: 0.02em;
+      }
+      p.subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto 64px;
+        padding: 0 20px;
+      }
+      ul.problem-list {
+        list-style: none;
+        margin: 32px 0 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      a.problem-card {
+        display: block;
+        padding: 18px 18px 16px;
+        background: var(--card);
+        border: 1px solid #efe7d7;
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+        transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+      }
+      a.problem-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 26px rgba(34, 32, 19, 0.12);
+        border-color: var(--accent);
+      }
+      .difficulty {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 2px 10px 4px;
+        font-size: 0.85rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent);
+        border: 1px solid var(--ring);
+        border-radius: 999px;
+      }
+      .title {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+      }
+      .meta {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .empty {
+        margin-top: 32px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Pyclimb Problems</h1>
+    </header>
+    <main>
+      {% if published_problem_list %}
+        <ul class="problem-list">
+          {% for problem in published_problem_list %}
+            <li>
+              <a class="problem-card" href="{% url 'problems:detail' problem.pk %}">
+                <span class="difficulty">{{ problem.get_difficulty_display }}</span>
+                <h2 class="title">{{ problem.title }}</h2>
+                <p class="meta">Created {{ problem.created_at|date:"M j, Y" }}</p>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">No published problems yet. Check back soon.</p>
+      {% endif %}
+    </main>
+  </body>
+</html>

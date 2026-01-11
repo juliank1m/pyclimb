@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ problem.title }} | Pyclimb</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --ink: #222013;
+        --accent: #d46b1a;
+        --card: #ffffff;
+        --muted: #6c6555;
+        --ring: rgba(212, 107, 26, 0.3);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Garamond", "Times New Roman", serif;
+        color: var(--ink);
+        background: radial-gradient(900px 500px at 90% 0%, #fff4de 0%, var(--bg) 60%);
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto 64px;
+        padding: 36px 20px 0;
+      }
+      a.back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+      }
+      header {
+        margin: 18px 0 24px;
+        padding: 24px;
+        background: var(--card);
+        border-radius: 16px;
+        border: 1px solid #efe7d7;
+        box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+      }
+      h1 {
+        margin: 8px 0 8px;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+      .difficulty {
+        display: inline-block;
+        padding: 2px 12px 4px;
+        font-size: 0.85rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent);
+        border: 1px solid var(--ring);
+        border-radius: 999px;
+      }
+      .section {
+        margin-top: 22px;
+        padding: 20px 24px;
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid #efe7d7;
+      }
+      .section h2 {
+        margin: 0 0 10px;
+        font-size: 1.2rem;
+        letter-spacing: 0.02em;
+      }
+      .section p {
+        margin: 0;
+        color: var(--ink);
+        line-height: 1.6;
+        font-size: 1.02rem;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="{% url 'problems:index' %}">← Back to all problems</a>
+      <header>
+        <span class="difficulty">{{ problem.get_difficulty_display }}</span>
+        <h1>{{ problem.title }}</h1>
+        <p class="muted">Updated {{ problem.updated_at|date:"M j, Y" }}</p>
+      </header>
+
+      <section class="section">
+        <h2>Problem</h2>
+        <p>{{ problem.description|linebreaksbr }}</p>
+      </section>
+
+      {% if problem.constraints %}
+        <section class="section">
+          <h2>Constraints</h2>
+          <p>{{ problem.constraints|linebreaksbr }}</p>
+        </section>
+      {% endif %}
+
+      {% if problem.follow_up %}
+        <section class="section">
+          <h2>Follow Up</h2>
+          <p>{{ problem.follow_up|linebreaksbr }}</p>
+        </section>
+      {% endif %}
+    </main>
+  </body>
+</html>
