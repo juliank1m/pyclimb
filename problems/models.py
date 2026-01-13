@@ -8,6 +8,7 @@ DIFFICULTY_CHOICES = [
     (3, "Hard"),
 ]
 
+
 class Problem(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
@@ -22,3 +23,29 @@ class Problem(models.Model):
     def __str__(self):
         return f"{self.title} ({self.get_difficulty_display()})"
 
+class TestCase(models.Model):
+    problem = models.ForeignKey(Problem, on_delete=models.CASCADE, related_name='test_cases')
+
+    input_data = models.TextField(
+        help_text="Raw stdin passed to the user's program"
+    )
+    expected_output = models.TextField(
+        help_text="Exact stdout expected from the program"
+    )
+    
+    display_input = models.TextField(
+        blank=True,
+        help_text="Human-readable version of the input (shown to users)"
+    )
+    display_output = models.TextField(
+        blank=True,
+        help_text="Human-readable version of the output (shown to users)"
+    )
+    explanation = models.TextField(
+        blank=True,
+        help_text="Optional explanation for this example"
+    )
+
+    is_sample = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
