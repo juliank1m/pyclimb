@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user.username }} | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.profile-header {
+  padding: 32px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid #efe7d7;
+  box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+  margin-bottom: 24px;
+}
+.profile-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+.profile-header .member-since {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid #efe7d7;
+  text-align: center;
+}
+.stat-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.stat-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.progress-section {
+  padding: 24px;
+  background: var(--card);
+  border-radius: 14px;
+  border: 1px solid #efe7d7;
+  margin-bottom: 24px;
+}
+.progress-section h2 {
+  margin: 0 0 20px;
+  font-size: 1.2rem;
+}
+.difficulty-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.difficulty-row:last-child {
+  margin-bottom: 0;
+}
+.difficulty-label {
+  width: 80px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.difficulty-label.easy { color: #27ae60; }
+.difficulty-label.medium { color: #f39c12; }
+.difficulty-label.hard { color: #c0392b; }
+.progress-bar {
+  flex: 1;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0 12px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.3s ease;
+}
+.progress-fill.easy { background: #27ae60; }
+.progress-fill.medium { background: #f39c12; }
+.progress-fill.hard { background: #c0392b; }
+.progress-count {
+  width: 60px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.verdict-breakdown {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.verdict-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+.verdict-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.verdict-dot.ac { background: var(--success); }
+.verdict-dot.wa { background: var(--error); }
+.verdict-dot.re { background: #e74c3c; }
+.verdict-dot.tle { background: var(--warning); }
+.recent-section {
+  padding: 24px;
+  background: var(--card);
+  border-radius: 14px;
+  border: 1px solid #efe7d7;
+}
+.recent-section h2 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+}
+.recent-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.recent-table th,
+.recent-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #efe7d7;
+}
+.recent-table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.recent-table tr:last-child td {
+  border-bottom: none;
+}
+.recent-table a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.recent-table a:hover {
+  text-decoration: underline;
+}
+.verdict-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+.verdict-AC { background: #d4edda; color: var(--success); }
+.verdict-WA { background: #f8d7da; color: var(--error); }
+.verdict-RE { background: #f8d7da; color: var(--error); }
+.verdict-TLE { background: #fff3cd; color: var(--warning); }
+.verdict-CE { background: #fff3cd; color: var(--warning); }
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: var(--muted);
+}
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+  <h1>{{ user.username }}</h1>
+  <p class="member-since">Member since {{ user.date_joined|date:"F Y" }}</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ solved_count }}</div>
+    <div class="stat-label">Problems Solved</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_submissions }}</div>
+    <div class="stat-label">Total Submissions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{% widthratio solved_count total_problems 100 %}%</div>
+    <div class="stat-label">Completion Rate</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{% if total_submissions > 0 %}{% widthratio accepted_count total_submissions 100 %}%{% else %}0%{% endif %}</div>
+    <div class="stat-label">Acceptance Rate</div>
+  </div>
+</div>
+
+<div class="progress-section">
+  <h2>Progress by Difficulty</h2>
+  
+  <div class="difficulty-row">
+    <span class="difficulty-label easy">Easy</span>
+    <div class="progress-bar">
+      <div class="progress-fill easy" style="width: {% if total_easy > 0 %}{% widthratio easy_solved total_easy 100 %}%{% else %}0%{% endif %};"></div>
+    </div>
+    <span class="progress-count">{{ easy_solved }}/{{ total_easy }}</span>
+  </div>
+  
+  <div class="difficulty-row">
+    <span class="difficulty-label medium">Medium</span>
+    <div class="progress-bar">
+      <div class="progress-fill medium" style="width: {% if total_medium > 0 %}{% widthratio medium_solved total_medium 100 %}%{% else %}0%{% endif %};"></div>
+    </div>
+    <span class="progress-count">{{ medium_solved }}/{{ total_medium }}</span>
+  </div>
+  
+  <div class="difficulty-row">
+    <span class="difficulty-label hard">Hard</span>
+    <div class="progress-bar">
+      <div class="progress-fill hard" style="width: {% if total_hard > 0 %}{% widthratio hard_solved total_hard 100 %}%{% else %}0%{% endif %};"></div>
+    </div>
+    <span class="progress-count">{{ hard_solved }}/{{ total_hard }}</span>
+  </div>
+  
+  <div class="verdict-breakdown">
+    <div class="verdict-item">
+      <span class="verdict-dot ac"></span>
+      <span>{{ accepted_count }} Accepted</span>
+    </div>
+    <div class="verdict-item">
+      <span class="verdict-dot wa"></span>
+      <span>{{ wrong_answer_count }} Wrong Answer</span>
+    </div>
+    <div class="verdict-item">
+      <span class="verdict-dot re"></span>
+      <span>{{ runtime_error_count }} Runtime Error</span>
+    </div>
+    <div class="verdict-item">
+      <span class="verdict-dot tle"></span>
+      <span>{{ tle_count }} Time Limit</span>
+    </div>
+  </div>
+</div>
+
+<div class="recent-section">
+  <h2>Recent Submissions</h2>
+  
+  {% if recent_submissions %}
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>Verdict</th>
+          <th>Submitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in recent_submissions %}
+          <tr>
+            <td><a href="{% url 'problems:detail' sub.problem.slug %}">{{ sub.problem.title }}</a></td>
+            <td>
+              <a href="{% url 'submissions:detail' sub.pk %}">
+                <span class="verdict-badge verdict-{{ sub.verdict }}">{{ sub.get_verdict_display }}</span>
+              </a>
+            </td>
+            <td>{{ sub.created_at|date:"M j, g:i A" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <p>No submissions yet. <a href="{% url 'problems:index' %}">Start solving problems!</a></p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

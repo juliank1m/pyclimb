@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}PyClimb{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
     <style>
       :root {
         --bg: #f4f1ea;
@@ -140,7 +141,7 @@
         <a href="{% url 'problems:index' %}">Problems</a>
         {% if user.is_authenticated %}
           <a href="{% url 'submissions:list' %}">My Submissions</a>
-          <span class="user-info">Welcome, <strong>{{ user.username }}</strong></span>
+          <a href="{% url 'profile' %}">{{ user.username }}</a>
           <form method="post" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}
             <button type="submit" class="nav-logout-btn">Logout</button>
