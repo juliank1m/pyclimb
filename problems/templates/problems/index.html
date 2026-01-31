@@ -17,12 +17,47 @@ header.page-header p.subtitle {
   color: var(--muted);
   font-size: 1.05rem;
 }
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 24px 0;
+}
+.filters select {
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: var(--card);
+  cursor: pointer;
+}
+.filters select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.filter-clear {
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.filter-clear:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 ul.problem-list {
   list-style: none;
   margin: 32px 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
 }
 a.problem-card {
@@ -35,22 +70,57 @@ a.problem-card {
   color: inherit;
   box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  position: relative;
 }
 a.problem-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 26px rgba(34, 32, 19, 0.12);
   border-color: var(--accent);
 }
+a.problem-card.solved {
+  border-color: #27ae60;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
 .difficulty {
   display: inline-block;
-  margin-bottom: 10px;
   padding: 2px 10px 4px;
   font-size: 0.85rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid var(--ring);
+  border: 1px solid;
   border-radius: 999px;
+}
+.difficulty.easy {
+  color: #27ae60;
+  border-color: rgba(39, 174, 96, 0.3);
+}
+.difficulty.medium {
+  color: #f39c12;
+  border-color: rgba(243, 156, 18, 0.3);
+}
+.difficulty.hard {
+  color: #c0392b;
+  border-color: rgba(192, 57, 43, 0.3);
+}
+.solved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #27ae60;
+  background: #d4edda;
+  border-radius: 999px;
+}
+.solved-badge svg {
+  width: 12px;
+  height: 12px;
 }
 .problem-card .title {
   margin: 0 0 8px;
@@ -67,6 +137,12 @@ a.problem-card:hover {
   color: var(--muted);
   font-size: 1.1rem;
 }
+.results-count {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
 {% endblock %}
 
 {% block content %}
@@ -75,19 +151,58 @@ a.problem-card:hover {
   <p class="subtitle">Practice coding challenges</p>
 </header>
 
+<form method="get" class="filters">
+  <select name="difficulty" onchange="this.form.submit()">
+    <option value="">All Difficulties</option>
+    {% for value, label in difficulty_choices %}
+      <option value="{{ value }}" {% if current_difficulty == value|stringformat:"d" %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  
+  {% if user.is_authenticated %}
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Status</option>
+      <option value="solved" {% if current_status == "solved" %}selected{% endif %}>Solved</option>
+      <option value="unsolved" {% if current_status == "unsolved" %}selected{% endif %}>Unsolved</option>
+    </select>
+  {% endif %}
+  
+  {% if current_difficulty or current_status %}
+    <a href="{% url 'problems:index' %}" class="filter-clear">Clear Filters</a>
+  {% endif %}
+</form>
+
 {% if published_problem_list %}
+  <p class="results-count">{{ published_problem_list|length }} problem{{ published_problem_list|length|pluralize }}</p>
+  
   <ul class="problem-list">
     {% for problem in published_problem_list %}
       <li>
-        <a class="problem-card" href="{% url 'problems:detail' problem.slug %}">
-          <span class="difficulty">{{ problem.get_difficulty_display }}</span>
+        <a class="problem-card {% if problem.id in solved_problem_ids %}solved{% endif %}" href="{% url 'problems:detail' problem.slug %}">
+          <div class="card-header">
+            <span class="difficulty {% if problem.difficulty == 1 %}easy{% elif problem.difficulty == 2 %}medium{% else %}hard{% endif %}">
+              {{ problem.get_difficulty_display }}
+            </span>
+            {% if problem.id in solved_problem_ids %}
+              <span class="solved-badge">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Solved
+              </span>
+            {% endif %}
+          </div>
           <h2 class="title">{{ problem.title }}</h2>
-          <p class="meta">Created {{ problem.created_at|date:"M j, Y" }}</p>
+          <p class="meta">{{ problem.description|truncatewords:12 }}</p>
         </a>
       </li>
     {% endfor %}
   </ul>
 {% else %}
-  <p class="empty">No published problems yet. Check back soon.</p>
+  <p class="empty">
+    {% if current_difficulty or current_status %}
+      No problems match your filters. <a href="{% url 'problems:index' %}">Clear filters</a>
+    {% else %}
+      No published problems yet. Check back soon.
+    {% endif %}
+  </p>
 {% endif %}
 {% endblock %}

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import generic
-from .models import Problem
+from .models import Problem, DIFFICULTY_CHOICES
 
 
 class IndexView(generic.ListView):
@@ -8,7 +8,46 @@ class IndexView(generic.ListView):
     context_object_name = "published_problem_list"
     
     def get_queryset(self):
-        return Problem.objects.filter(is_published=True).order_by("pk")
+        queryset = Problem.objects.filter(is_published=True)
+        
+        # Filter by difficulty
+        difficulty = self.request.GET.get('difficulty')
+        if difficulty and difficulty.isdigit():
+            queryset = queryset.filter(difficulty=int(difficulty))
+        
+        # Filter by solved status (requires auth)
+        status = self.request.GET.get('status')
+        if status and self.request.user.is_authenticated:
+            from submissions.models import Verdict
+            solved_ids = self.request.user.submissions.filter(
+                verdict=Verdict.ACCEPTED
+            ).values_list('problem_id', flat=True).distinct()
+            
+            if status == 'solved':
+                queryset = queryset.filter(id__in=solved_ids)
+            elif status == 'unsolved':
+                queryset = queryset.exclude(id__in=solved_ids)
+        
+        return queryset.order_by('difficulty', 'pk')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['difficulty_choices'] = DIFFICULTY_CHOICES
+        context['current_difficulty'] = self.request.GET.get('difficulty', '')
+        context['current_status'] = self.request.GET.get('status', '')
+        
+        # Get solved problem IDs for the current user
+        if self.request.user.is_authenticated:
+            from submissions.models import Verdict
+            context['solved_problem_ids'] = set(
+                self.request.user.submissions.filter(
+                    verdict=Verdict.ACCEPTED
+                ).values_list('problem_id', flat=True).distinct()
+            )
+        else:
+            context['solved_problem_ids'] = set()
+        
+        return context
 
 
 class DetailView(generic.DetailView):
