@@ -1,15 +1,14 @@
-# PyClimb Dependencies
-Django>=6.0.1
-psycopg2-binary>=2.9.11
-python-dotenv>=1.2.1
-
-# Markdown rendering for lessons
-Markdown>=3.5
-Pygments>=2.17  # Code syntax highlighting
-
-# Optional: For production deployment
-gunicorn>=21.0.0
-
-# Testing
-pytest>=8.0.0
-pytest-django>=4.7.0
+asgiref==3.11.0
+dj-database-url==3.1.0
+Django==6.0.1
+gunicorn==24.1.1
+iniconfig==2.3.0
+Markdown==3.10.1
+packaging==26.0
+pluggy==1.6.0
+psycopg2-binary==2.9.11
+Pygments==2.19.2
+pytest==9.0.2
+pytest-django==4.11.1
+python-dotenv==1.2.1
+sqlparse==0.5.5
