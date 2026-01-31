@@ -100,7 +100,7 @@
         <ul class="problem-list">
           {% for problem in published_problem_list %}
             <li>
-              <a class="problem-card" href="{% url 'problems:detail' problem.pk %}">
+              <a class="problem-card" href="{% url 'problems:detail' problem.slug %}">
                 <span class="difficulty">{{ problem.get_difficulty_display }}</span>
                 <h2 class="title">{{ problem.title }}</h2>
                 <p class="meta">Created {{ problem.created_at|date:"M j, Y" }}</p>

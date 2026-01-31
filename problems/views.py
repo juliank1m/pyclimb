@@ -12,6 +12,8 @@ class IndexView(generic.ListView):
 class DetailView(generic.DetailView):
     model = Problem
     template_name = "problems/detail.html"
+    slug_field = "slug"
+    slug_url_kwarg = "slug"
 
     def get_queryset(self):
         return Problem.objects.filter(is_published=True)

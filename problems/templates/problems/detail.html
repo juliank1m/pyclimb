@@ -78,6 +78,111 @@
         color: var(--muted);
         font-size: 0.95rem;
       }
+      .example {
+        margin-top: 16px;
+        padding: 16px;
+        background: var(--bg);
+        border-radius: 10px;
+      }
+      .example:first-of-type {
+        margin-top: 0;
+      }
+      .example h3 {
+        margin: 0 0 12px;
+        font-size: 1rem;
+        color: var(--accent);
+      }
+      .example-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .example-row:last-child {
+        margin-bottom: 0;
+      }
+      .example-label {
+        font-weight: 600;
+        min-width: 60px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .example-value {
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 0.92rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .example-explanation {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e0dace;
+        font-size: 0.95rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .submit-btn {
+        display: inline-block;
+        margin-top: 24px;
+        padding: 14px 36px;
+        font-family: inherit;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        background: var(--accent);
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: background 0.15s ease, transform 0.1s ease;
+      }
+      .submit-btn:hover {
+        background: #b85a15;
+        transform: translateY(-1px);
+      }
+      .io-format {
+        margin-top: 22px;
+        padding: 16px 20px;
+        background: #f8f6f0;
+        border-radius: 12px;
+        border-left: 4px solid var(--accent);
+      }
+      .io-format h2 {
+        margin: 0 0 10px;
+        font-size: 1.1rem;
+        color: var(--accent);
+      }
+      .io-format p {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      .io-format code {
+        background: #e8e4dc;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 0.88em;
+      }
+      .signature-box {
+        margin-top: 22px;
+        padding: 16px 20px;
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid #efe7d7;
+      }
+      .signature-box h2 {
+        margin: 0 0 12px;
+        font-size: 1.1rem;
+        color: var(--accent);
+      }
+      .signature-code {
+        padding: 12px 16px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 14px;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
     </style>
   </head>
   <body>
@@ -107,6 +212,79 @@
           <p>{{ problem.follow_up|linebreaksbr }}</p>
         </section>
       {% endif %}
+
+      {% with samples=problem.sample_cases %}
+        {% if samples %}
+          <section class="section">
+            <h2>Examples</h2>
+            {% for case in samples %}
+              <div class="example">
+                <h3>Example {{ forloop.counter }}</h3>
+                <div class="example-row">
+                  <span class="example-label">Input:</span>
+                  <span class="example-value">{{ case.display_input }}</span>
+                </div>
+                <div class="example-row">
+                  <span class="example-label">Output:</span>
+                  <span class="example-value">{{ case.display_output }}</span>
+                </div>
+                {% if case.explanation %}
+                  <div class="example-explanation">{{ case.explanation }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      {% if problem.judge_mode == 'function' %}
+        {# Function-call mode (LeetCode style) #}
+        {% if problem.signature_text %}
+          <div class="signature-box">
+            <h2>Function Signature</h2>
+            <pre class="signature-code">{{ problem.signature_text }}</pre>
+          </div>
+        {% endif %}
+
+        <div class="io-format">
+          <h2>How to Submit</h2>
+          {% if problem.entrypoint_type == 'class' %}
+            <p>
+              Implement a <code>Solution</code> class with a <code>{{ problem.entrypoint_name }}</code> method.
+            </p>
+            <p>
+              Your method will be called with the input parameters and should <strong>return</strong> the answer.
+            </p>
+          {% else %}
+            <p>
+              Implement a function called <code>{{ problem.entrypoint_name }}</code>.
+            </p>
+            <p>
+              Your function will be called with the input parameters and should <strong>return</strong> the answer.
+            </p>
+          {% endif %}
+          <p style="color: var(--muted); font-size: 0.9rem; margin-top: 10px;">
+            This is LeetCode-style: you implement a function, and the judge calls it with test inputs.
+          </p>
+        </div>
+      {% else %}
+        {# Standard I/O mode #}
+        <div class="io-format">
+          <h2>How to Submit</h2>
+          <p>
+            Your solution should read from <strong>standard input</strong> and write to <strong>standard output</strong>.
+          </p>
+          <p>
+            Use <code>input()</code> to read each line of input, and <code>print()</code> to output your answer.
+          </p>
+          <p style="color: var(--muted); font-size: 0.9rem; margin-top: 10px;">
+            The "Input" shown in examples above is what your program receives via <code>input()</code>.
+            The "Output" is what your program should <code>print()</code>.
+          </p>
+        </div>
+      {% endif %}
+
+      <a class="submit-btn" href="{% url 'submissions:create' problem.slug %}">Submit Solution</a>
     </main>
   </body>
 </html>
