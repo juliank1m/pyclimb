@@ -6,14 +6,14 @@ Focuses on:
 - Tag functionality
 - View behavior
 """
-import pytest
+from django.core.exceptions import ValidationError
+from django.template.defaultfilters import slugify
 from django.test import TestCase, Client
 from django.urls import reverse
 
 from problems.models import Problem, TestCase as ProblemTestCase, Tag, JudgeMode
 
 
-@pytest.mark.django_db
 class ProblemModelTests(TestCase):
     """Tests for the Problem model."""
 
@@ -87,49 +87,64 @@ class ProblemModelTests(TestCase):
         with self.assertRaises(Exception):
             problem.full_clean()
 
+    def test_function_call_mode_rejects_invalid_entrypoint(self):
+        """Function-call mode should reject invalid entrypoint_name."""
+        problem = Problem(
+            title='Function Problem',
+            description='',
+            difficulty=1,
+            judge_mode=JudgeMode.FUNCTION_CALL,
+            entrypoint_name='bad-name()'
+        )
+        with self.assertRaises(ValidationError):
+            problem.full_clean()
 
-@pytest.mark.django_db
+
 class TagModelTests(TestCase):
     """Tests for the Tag model."""
 
     def test_tag_slug_auto_generated(self):
         """Tag slug should be auto-generated."""
-        tag = Tag.objects.create(name='Dynamic Programming')
-        self.assertEqual(tag.slug, 'dynamic-programming')
+        name = f'Dynamic Programming {self._testMethodName}'
+        tag = Tag.objects.create(name=name)
+        self.assertEqual(tag.slug, slugify(name))
 
     def test_tag_str(self):
         """Tag string should be the name."""
-        tag = Tag.objects.create(name='Arrays')
-        self.assertEqual(str(tag), 'Arrays')
+        name = f'Arrays {self._testMethodName}'
+        tag = Tag.objects.create(name=name)
+        self.assertEqual(str(tag), name)
 
     def test_tag_ordering(self):
         """Tags should be ordered by name."""
-        Tag.objects.create(name='Strings')
-        Tag.objects.create(name='Arrays')
-        Tag.objects.create(name='Hashing')
-        tags = list(Tag.objects.all())
-        self.assertEqual([t.name for t in tags], ['Arrays', 'Hashing', 'Strings'])
+        suffix = self._testMethodName
+        Tag.objects.create(name=f'Strings {suffix}')
+        Tag.objects.create(name=f'Arrays {suffix}')
+        Tag.objects.create(name=f'Hashing {suffix}')
+        tags = list(Tag.objects.filter(name__endswith=f' {suffix}'))
+        expected = [f'Arrays {suffix}', f'Hashing {suffix}', f'Strings {suffix}']
+        self.assertEqual([t.name for t in tags], expected)
 
 
-@pytest.mark.django_db
 class ProblemTagsTests(TestCase):
     """Tests for Problem-Tag relationship."""
 
     def test_problem_can_have_multiple_tags(self):
         """A problem can have multiple tags."""
         problem = Problem.objects.create(
-            title='Two Sum',
+            title=f'Two Sum {self._testMethodName}',
             description='',
             difficulty=1
         )
-        tag1 = Tag.objects.create(name='Arrays')
-        tag2 = Tag.objects.create(name='Hashing')
+        suffix = self._testMethodName
+        tag1 = Tag.objects.create(name=f'Arrays {suffix}')
+        tag2 = Tag.objects.create(name=f'Hashing {suffix}')
         problem.tags.add(tag1, tag2)
         self.assertEqual(problem.tags.count(), 2)
 
     def test_tag_can_have_multiple_problems(self):
         """A tag can be associated with multiple problems."""
-        tag = Tag.objects.create(name='Arrays')
+        tag = Tag.objects.create(name=f'Arrays {self._testMethodName}')
         p1 = Problem.objects.create(title='P1', description='', difficulty=1)
         p2 = Problem.objects.create(title='P2', description='', difficulty=2)
         p1.tags.add(tag)
@@ -137,7 +152,6 @@ class ProblemTagsTests(TestCase):
         self.assertEqual(tag.problems.count(), 2)
 
 
-@pytest.mark.django_db
 class ProblemViewTests(TestCase):
     """Tests for problem views."""
 
@@ -207,7 +221,7 @@ class ProblemViewTests(TestCase):
 
     def test_filter_by_tag(self):
         """Index view should filter by tag."""
-        tag = Tag.objects.create(name='Arrays')
+        tag = Tag.objects.create(name=f'Arrays {self._testMethodName}')
         self.problem.tags.add(tag)
         
         Problem.objects.create(
@@ -218,6 +232,6 @@ class ProblemViewTests(TestCase):
             is_published=True
         )
         
-        response = self.client.get(reverse('problems:index') + '?tag=arrays')
+        response = self.client.get(reverse('problems:index') + f'?tag={tag.slug}')
         self.assertContains(response, 'Test Problem')
         self.assertNotContains(response, 'Other Problem')

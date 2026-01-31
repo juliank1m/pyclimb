@@ -4,6 +4,7 @@ Harness templates for function-call mode execution.
 These templates are written to the temp directory and executed
 in a subprocess to safely run user code.
 """
+import keyword
 
 # Template for Solution class (LeetCode default style)
 # Placeholders: {method_name}
@@ -90,6 +91,8 @@ def get_harness_code(entrypoint_type: str, entrypoint_name: str) -> str:
     Returns:
         Python code string for the harness runner
     """
+    if (not entrypoint_name.isidentifier()) or keyword.iskeyword(entrypoint_name):
+        raise ValueError('Entrypoint name must be a valid Python identifier and not a keyword.')
     if entrypoint_type == 'class':
         return SOLUTION_CLASS_HARNESS.format(method_name=entrypoint_name)
     else:

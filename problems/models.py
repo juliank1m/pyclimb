@@ -1,4 +1,5 @@
 import json
+import keyword
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.template.defaultfilters import slugify
@@ -92,6 +93,10 @@ class Problem(models.Model):
             errors = {}
             if not self.entrypoint_name:
                 errors['entrypoint_name'] = 'Function-call mode requires an entrypoint name.'
+            elif (not self.entrypoint_name.isidentifier()) or keyword.iskeyword(self.entrypoint_name):
+                errors['entrypoint_name'] = (
+                    'Entrypoint name must be a valid Python identifier and not a keyword.'
+                )
             if errors:
                 raise ValidationError(errors)
 

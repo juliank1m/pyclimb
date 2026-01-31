@@ -89,6 +89,7 @@ Create a `.env` file or set these environment variables:
 |----------|-------------|---------|
 | `DB_SSLMODE` | PostgreSQL SSL mode | `disable` |
 | `PYCLIMB_USE_SANDBOX` | Enable Docker sandboxing | `false` |
+| `PYCLIMB_REQUIRE_SANDBOX` | Refuse to run code without sandbox | `false` |
 | `PYCLIMB_SANDBOX_IMAGE` | Docker image for sandbox | `pyclimb-sandbox` |
 | `PYCLIMB_SANDBOX_TIMEOUT` | Sandbox timeout (seconds) | `5` |
 | `PYCLIMB_SANDBOX_MEMORY` | Sandbox memory limit | `128m` |
@@ -424,6 +425,7 @@ Before going live:
 - [ ] HTTPS enabled (SSL certificate)
 - [ ] Database password is strong and unique
 - [ ] Sandbox enabled (`PYCLIMB_USE_SANDBOX=true`)
+- [ ] Sandbox required (`PYCLIMB_REQUIRE_SANDBOX=true`)
 - [ ] Firewall configured (only 80, 443 open)
 - [ ] Regular backups configured
 - [ ] Rate limiting enabled (automatic when `DEBUG=false`)

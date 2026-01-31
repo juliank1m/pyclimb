@@ -226,6 +226,7 @@ PyClimb now includes a Docker-based sandbox for secure code execution.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PYCLIMB_USE_SANDBOX` | `false` | Enable Docker sandbox |
+| `PYCLIMB_REQUIRE_SANDBOX` | `false` | Refuse to run code without sandbox (defaults to true when DEBUG is false) |
 | `PYCLIMB_SANDBOX_IMAGE` | `pyclimb-sandbox` | Docker image name |
 | `PYCLIMB_SANDBOX_TIMEOUT` | `5` | Execution timeout (seconds) |
 | `PYCLIMB_SANDBOX_MEMORY` | `128m` | Memory limit |
@@ -248,7 +249,8 @@ echo 'open("/evil.txt", "w").write("pwned")' | \
 ### Fallback Behavior
 
 If Docker is unavailable or sandbox mode is disabled, the runner uses the original
-subprocess-based execution. The application logs will indicate which mode is active.
+subprocess-based execution unless sandboxing is required (see `PYCLIMB_REQUIRE_SANDBOX`),
+in which case execution is refused.
 
 ---
 
@@ -290,5 +292,6 @@ If you suspect a security breach:
 
 **Bottom line:** 
 - For local development, sandbox mode is optional.
-- For any deployment with untrusted users, **enable sandbox mode** (`PYCLIMB_USE_SANDBOX=true`).
+- For any deployment with untrusted users, **enable sandbox mode** (`PYCLIMB_USE_SANDBOX=true`)
+  and consider requiring it (`PYCLIMB_REQUIRE_SANDBOX=true`) to prevent unsandboxed fallback.
 - For public internet deployment, also implement Phase 4 (rate limiting, queues, monitoring).

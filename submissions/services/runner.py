@@ -33,6 +33,10 @@ from .sandbox import (
     run_function_in_sandbox,
     SandboxResult
 )
+try:
+    from django.conf import settings
+except Exception:  # pragma: no cover - safety for non-Django contexts
+    settings = None
 
 
 # Safety constants
@@ -68,6 +72,22 @@ def _check_sandbox_mode() -> bool:
         _docker_available = is_docker_available()
     
     return _docker_available
+
+
+def _sandbox_required() -> bool:
+    """
+    Require sandboxing for untrusted execution in production-like contexts.
+    Defaults to requiring sandbox when DEBUG is false, unless explicitly disabled.
+    """
+    if settings is not None and hasattr(settings, 'PYCLIMB_REQUIRE_SANDBOX'):
+        return bool(getattr(settings, 'PYCLIMB_REQUIRE_SANDBOX'))
+    env_flag = os.environ.get('PYCLIMB_REQUIRE_SANDBOX')
+    if env_flag is not None and env_flag != '':
+        return env_flag.lower() in ('true', '1', 'yes')
+    if settings is not None:
+        debug = getattr(settings, 'DEBUG', False)
+        return not debug
+    return False
 
 
 @dataclass
@@ -127,6 +147,15 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
             timed_out=sandbox_result.timed_out,
             elapsed_ms=elapsed_ms,
             error=sandbox_result.error
+        )
+    if _sandbox_required():
+        return RunResult(
+            stdout='',
+            stderr='Sandboxing is required for code execution.',
+            exit_code=-1,
+            timed_out=False,
+            elapsed_ms=0,
+            error='Sandbox required'
         )
 
     # Create a temporary directory for isolation
@@ -232,7 +261,18 @@ def run_function_call(
         )
     
     # Get harness code
-    harness_code = get_harness_code(entrypoint_type, entrypoint_name)
+    try:
+        harness_code = get_harness_code(entrypoint_type, entrypoint_name)
+    except ValueError as e:
+        return FunctionCallResult(
+            success=False,
+            result=None,
+            error_type='internal',
+            error_message=str(e),
+            traceback='',
+            timed_out=False,
+            elapsed_ms=0
+        )
     
     # Use Docker sandbox if enabled and available
     if _check_sandbox_mode():
@@ -310,6 +350,17 @@ def run_function_call(
                 timed_out=False,
                 elapsed_ms=elapsed_ms
             )
+
+    if _sandbox_required():
+        return FunctionCallResult(
+            success=False,
+            result=None,
+            error_type='internal',
+            error_message='Sandboxing is required for code execution.',
+            traceback='',
+            timed_out=False,
+            elapsed_ms=0
+        )
 
     # Fallback: run in subprocess (not sandboxed)
     with tempfile.TemporaryDirectory(prefix='pyclimb_fc_') as tmpdir:

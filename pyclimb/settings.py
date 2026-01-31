@@ -198,6 +198,7 @@ RATELIMIT_LOGIN_LIMIT = 10       # login attempts per 5 minutes
 
 # Sandbox configuration
 PYCLIMB_USE_SANDBOX = os.environ.get('PYCLIMB_USE_SANDBOX', 'false').lower() in ('true', '1', 'yes')
+PYCLIMB_REQUIRE_SANDBOX = os.environ.get('PYCLIMB_REQUIRE_SANDBOX', '').lower() in ('true', '1', 'yes')
 PYCLIMB_SANDBOX_IMAGE = os.environ.get('PYCLIMB_SANDBOX_IMAGE', 'pyclimb-sandbox')
 PYCLIMB_SANDBOX_TIMEOUT = int(os.environ.get('PYCLIMB_SANDBOX_TIMEOUT', '5'))
 PYCLIMB_SANDBOX_MEMORY = os.environ.get('PYCLIMB_SANDBOX_MEMORY', '128m')
