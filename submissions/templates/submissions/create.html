@@ -275,10 +275,10 @@ textarea#id_code:focus {
       updateStatus('Draft cleared');
     });
 
-    // Sync to textarea on form submit
+    // Sync to textarea on form submit, but keep draft for failed submissions
     form.addEventListener('submit', function() {
       textarea.value = editor.getValue();
-      localStorage.removeItem(DRAFT_KEY);
+      saveDraft(editor.getValue());
     });
 
     // Store editor reference
