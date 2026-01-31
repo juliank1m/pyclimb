@@ -24,11 +24,12 @@ COPY . .
 # Set minimal env vars needed for collectstatic to run
 RUN SECRET_KEY=build-only-key DEBUG=false python manage.py collectstatic --noinput --clear
 
-# Note: Migrations run via Procfile release command, NOT during build
-# The database isn't available at build time
+# Make startup script executable
+COPY start.sh .
+RUN chmod +x start.sh
 
 # Expose port 8080
 EXPOSE 8080
 
-# Run gunicorn on port 8080
-CMD ["gunicorn", "pyclimb.wsgi:application", "--bind", "0.0.0.0:8080"]
+# Run startup script (runs migrations then starts gunicorn)
+CMD ["./start.sh"]
