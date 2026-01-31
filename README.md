@@ -1,6 +1,6 @@
 # PyClimb
 
-> A Python practice platform for writing, browsing, and solving coding problems.
+> A Python practice platform for writing, browsing, and solving coding problems with integrated learning content.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Django](https://img.shields.io/badge/Django-6.0.1-0C4B33.svg)](https://www.djangoproject.com/)
@@ -34,6 +34,7 @@ At its current stage, PyClimb supports:
 - `Problem` model with title, description, constraints, follow-up, difficulty, and publish state
 - `TestCase` model with machine-readable inputs/outputs and human-readable display versions
 - Sample vs hidden test cases
+- Tag-based categorization and filtering
 - Django Admin UI with inline test case editing
 
 ### Submission System
@@ -41,16 +42,42 @@ At its current stage, PyClimb supports:
 - **Code execution** via subprocess with safety guardrails
 - **Verdicts:** Accepted, Wrong Answer, Runtime Error, Time Limit Exceeded, Compilation Error
 - **Detailed feedback** showing expected vs actual output for sample tests
-- stdin/stdout execution model (not function-call style)
+- stdin/stdout and function-call (LeetCode-style) execution modes
+
+### Lessons & Learning Content
+- **Courses** - Organize lessons into structured learning paths
+- **Lessons** - Markdown-based content with code blocks and formatting
+- **Rich Editor** - EasyMDE-powered editor with:
+  - Full formatting toolbar (bold, italic, headings, lists, quotes, links)
+  - Code block insertion with language selection
+  - Image upload (file upload or URL)
+  - Drag-and-drop image support
+  - Side-by-side live preview
+  - Fullscreen editing mode
+  - Autosave
+- **Draft/Published states** - Preview content before publishing
+- **Problem linking** - Connect lessons to practice problems
+- **Navigation** - Previous/next lesson navigation within courses
+- **Teacher Dashboard** - Staff-only interface at `/learn/teach/` for content management
+
+### User System
+- User registration with email verification
+- Login/logout authentication
+- Password reset via email
+- User profiles with statistics
+- Leaderboard with solve counts
 
 ### User Interface
-- Problem list and detail pages
+- Problem list with difficulty and tag filtering
 - Submission form with format guidance and code template
 - Submission result page with test case breakdown
+- Learning section at `/learn/` with course and lesson views
 
 ### Infrastructure
 - PostgreSQL-backed Django project (database in Docker)
-- Slug-based URLs for problems
+- Slug-based URLs for problems and lessons
+- Rate limiting for submissions and authentication
+- Media file storage for lesson images
 
 ---
 
@@ -82,8 +109,9 @@ PyClimb is built as a **learning project** to practice:
 - Admin tooling and developer UX
 - Separation of human-facing vs machine-facing data
 - Clean backend architecture before adding complexity
+- Content management systems
 
-Rather than copying LeetCode’s UI or features directly, PyClimb prioritizes **understanding the “why” behind backend design decisions**.
+Rather than copying LeetCode's UI or features directly, PyClimb prioritizes **understanding the "why" behind backend design decisions**.
 
 ---
 
@@ -92,7 +120,9 @@ Rather than copying LeetCode’s UI or features directly, PyClimb prioritizes **
 - **Backend:** Django 6.x
 - **Database:** PostgreSQL 16
 - **Database Runtime:** Docker
-- **Frontend:** Django templates (for now)
+- **Frontend:** Django templates
+- **Markdown:** Python-Markdown with Pygments syntax highlighting
+- **Editor:** EasyMDE (markdown editor)
 
 ---
 
@@ -100,7 +130,7 @@ Rather than copying LeetCode’s UI or features directly, PyClimb prioritizes **
 ```
 pyclimb/
 ├── problems/              # Problem browsing app
-│   ├── models.py          # Problem, TestCase
+│   ├── models.py          # Problem, TestCase, Tag
 │   ├── views.py           # List and detail views
 │   ├── admin.py           # Admin configuration
 │   └── templates/
@@ -110,12 +140,30 @@ pyclimb/
 │   ├── services/          # Judge logic
 │   │   ├── judge.py       # Main judge orchestration
 │   │   ├── runner.py      # Subprocess execution
+│   │   ├── sandbox.py     # Docker sandbox
 │   │   └── normalize.py   # Output comparison
 │   └── templates/
+├── lessons/               # Learning content app
+│   ├── models.py          # Course, Lesson
+│   ├── views.py           # Public views + teacher dashboard
+│   ├── forms.py           # Course and lesson forms
+│   ├── admin.py           # Admin configuration
+│   └── templates/
+│       └── lessons/
+│           ├── index.html         # Course/lesson list
+│           ├── course_detail.html # Course page
+│           ├── lesson_detail.html # Lesson with markdown content
+│           └── teach/             # Teacher dashboard templates
+├── accounts/              # User authentication
+│   ├── models.py          # UserProfile, EmailVerification
+│   └── signals.py         # Profile auto-creation
 ├── pyclimb/               # Project settings
 │   ├── settings.py
-│   └── urls.py
+│   ├── urls.py
+│   └── templates/         # Base templates
+├── media/                 # User uploads (gitignored)
 ├── manage.py
+├── DEPLOYMENT.md          # Production deployment guide
 ├── SECURITY.md            # Security documentation
 └── README.md
 ```
@@ -132,16 +180,65 @@ pyclimb/
 - Docker
 - Docker Compose (or Docker Desktop)
 
-### Setup (High-Level)
+### Setup
 
-1. Clone the repository
-2. Create a `.env` file with database credentials
-3. Start PostgreSQL via Docker
-4. Run Django migrations
-5. Create a superuser
-6. Start the development server
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/pyclimb.git
+   cd pyclimb
+   ```
 
-Detailed step-by-step setup may be added as the project stabilizes.
+2. Create virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Create a `.env` file with database credentials:
+   ```bash
+   DB_NAME=pyclimb_db
+   DB_USER=your_user
+   DB_PASSWORD=your_password
+   DB_HOST=localhost
+   DB_PORT=5432
+   ```
+
+5. Start PostgreSQL via Docker:
+   ```bash
+   docker run -d \
+     --name pyclimb-postgres \
+     -e POSTGRES_DB=pyclimb_db \
+     -e POSTGRES_USER=your_user \
+     -e POSTGRES_PASSWORD=your_password \
+     -p 5432:5432 \
+     postgres:16
+   ```
+
+6. Run Django migrations:
+   ```bash
+   python manage.py migrate
+   ```
+
+7. Create a superuser:
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+8. Start the development server:
+   ```bash
+   python manage.py runserver
+   ```
+
+9. Visit:
+   - Problems: http://localhost:8000/problems/
+   - Learning: http://localhost:8000/learn/
+   - Teacher Dashboard: http://localhost:8000/learn/teach/ (staff only)
+   - Admin: http://localhost:8000/admin/
 
 ---
 
@@ -152,19 +249,26 @@ Detailed step-by-step setup may be added as the project stabilizes.
 - ✅ Code execution via subprocess
 - ✅ Test case evaluation engine
 - ✅ Submission results with detailed feedback
+- ✅ User authentication with email verification
+- ✅ Leaderboard and user statistics
+- ✅ Rate limiting
+- ✅ Docker sandbox for secure code execution
+- ✅ Function-call (LeetCode-style) judge mode
+- ✅ **Lessons system with markdown editor**
+- ✅ **Teacher dashboard for content management**
+- ✅ **Image upload support for lessons**
 
 ### Next Up
-- [ ] User authentication
-- [ ] Submission history per user
-- [ ] Saved code drafts
-- [ ] Container-based sandboxing for production safety
-- [ ] Basic progress tracking
+- [ ] Learner progress tracking (mark lessons as complete)
+- [ ] Course completion certificates
+- [ ] Code syntax highlighting in lessons
+- [ ] Search functionality
 
 ### Future
-- [ ] Rate limiting
 - [ ] Async execution queue (Celery)
-- [ ] Multiple test case formats
-- [ ] Performance metrics (execution time, memory)
+- [ ] Discussion forums
+- [ ] Hints system for problems
+- [ ] Video embeds in lessons
 
 ---
 

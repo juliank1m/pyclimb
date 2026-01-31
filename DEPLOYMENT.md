@@ -209,6 +209,11 @@ server {
         expires 30d;
     }
     
+    location /media/ {
+        alias /path/to/pyclimb/media/;
+        expires 30d;
+    }
+    
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
@@ -249,6 +254,31 @@ For production, you need to configure static file serving:
 
 3. Serve via nginx (see nginx config above).
 
+## Media Files (Lesson Images)
+
+Lessons support image uploads. Configure media file serving:
+
+1. Create media directory:
+   ```bash
+   mkdir -p /path/to/pyclimb/media/lessons
+   chown www-data:www-data /path/to/pyclimb/media
+   ```
+
+2. Add to nginx configuration:
+   ```nginx
+   location /media/ {
+       alias /path/to/pyclimb/media/;
+       expires 30d;
+   }
+   ```
+
+3. For production with cloud storage (recommended), configure Django Storages:
+   ```bash
+   pip install django-storages boto3  # For AWS S3
+   ```
+   
+   Then update settings.py for your storage backend.
+
 ## Running Tests
 
 ```bash
@@ -260,8 +290,46 @@ pytest
 
 # Run with coverage
 pip install pytest-cov
-pytest --cov=submissions --cov=problems --cov=accounts
+pytest --cov=submissions --cov=problems --cov=accounts --cov=lessons
 ```
+
+## Lessons & Content Management
+
+PyClimb includes a full content management system for learning materials.
+
+### Teacher Dashboard
+
+Staff users can access the teacher dashboard at `/learn/teach/` to:
+- Create and edit courses and lessons
+- Upload images for lesson content
+- Preview lessons before publishing
+- Toggle publish/draft status
+
+### Creating Content
+
+1. Log in as a staff user (superuser or user with `is_staff=True`)
+2. Navigate to `/learn/teach/`
+3. Click "New Course" or "New Lesson"
+4. Use the rich markdown editor with toolbar for formatting
+5. Preview content before publishing
+
+### Markdown Features
+
+The lesson editor supports:
+- **Headings** (H1-H6)
+- **Bold**, *italic*, ~~strikethrough~~
+- Bullet and numbered lists
+- Code blocks with syntax highlighting
+- Links and images
+- Blockquotes
+- Tables
+
+### Image Uploads
+
+- Images are stored in `/media/lessons/`
+- Maximum file size: 5MB
+- Supported formats: JPEG, PNG, GIF, WebP
+- Drag-and-drop upload supported
 
 ## Monitoring
 
