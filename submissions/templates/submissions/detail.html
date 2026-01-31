@@ -3,6 +3,12 @@
 
 {% block title %}Submission #{{ submission.pk }} | PyClimb{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+{% endblock %}
+
 {% block extra_styles %}
 header.submission-header {
   margin: 0 0 24px;
@@ -54,16 +60,22 @@ header.submission-header .meta {
 }
 pre.code {
   margin: 0;
+  padding: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+pre.code code {
+  display: block;
   padding: 16px;
   font-family: "SF Mono", "Menlo", "Consolas", monospace;
   font-size: 13px;
   line-height: 1.5;
-  background: #fafafa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
   overflow-x: auto;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  white-space: pre;
+}
+pre.code code.hljs {
+  background: #f8f8f8;
 }
 
 /* Test case results */
@@ -338,10 +350,18 @@ pre.code {
 
 <section class="section">
   <h2>Your Code</h2>
-  <pre class="code">{{ submission.code }}</pre>
+  <pre class="code"><code class="language-python">{{ submission.code }}</code></pre>
 </section>
 
 <div style="margin-top: 24px;">
   <a class="back" href="{% url 'submissions:create' submission.problem.slug %}">← Submit Again</a>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('pre.code code').forEach(function(block) {
+      hljs.highlightElement(block);
+    });
+  });
+</script>
 {% endblock %}
