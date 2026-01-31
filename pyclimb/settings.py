@@ -24,10 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-w$&+yevv_pw*)o7$_$%n2hjou3531+)e(jlwdl4s$l!5ve%#dx'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-w$&+yevv_pw*)o7$_$%n2hjou3531+)e(jlwdl4s$l!5ve%#dx')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'true').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = []
 
@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'pyclimb.middleware.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'pyclimb.urls'
@@ -135,3 +136,62 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/problems/'
 LOGOUT_REDIRECT_URL = '/problems/'
+
+# Cache configuration (for rate limiting)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'pyclimb-cache',
+    }
+}
+
+# Rate limiting (enabled by default in production, disabled in DEBUG mode)
+RATELIMIT_ENABLE = not DEBUG
+RATELIMIT_SUBMISSION_LIMIT = 10  # submissions per minute
+RATELIMIT_REGISTER_LIMIT = 5     # registrations per hour per IP
+RATELIMIT_LOGIN_LIMIT = 10       # login attempts per 5 minutes
+
+# Sandbox configuration
+PYCLIMB_USE_SANDBOX = os.environ.get('PYCLIMB_USE_SANDBOX', 'false').lower() in ('true', '1', 'yes')
+PYCLIMB_SANDBOX_IMAGE = os.environ.get('PYCLIMB_SANDBOX_IMAGE', 'pyclimb-sandbox')
+PYCLIMB_SANDBOX_TIMEOUT = int(os.environ.get('PYCLIMB_SANDBOX_TIMEOUT', '5'))
+PYCLIMB_SANDBOX_MEMORY = os.environ.get('PYCLIMB_SANDBOX_MEMORY', '128m')
+PYCLIMB_SANDBOX_CPUS = os.environ.get('PYCLIMB_SANDBOX_CPUS', '0.5')
+
+# =============================================================================
+# Production Settings
+# =============================================================================
+# Override these in production by setting environment variables
+
+# Security settings for production
+if not DEBUG:
+    # HTTPS settings
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'true').lower() == 'true'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # HSTS settings
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Secret key must be set via environment in production
+    if SECRET_KEY.startswith('django-insecure'):
+        import warnings
+        warnings.warn(
+            "Using insecure SECRET_KEY in production! "
+            "Set the SECRET_KEY environment variable.",
+            RuntimeWarning
+        )
+    
+    # Allowed hosts must be configured
+    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+    if not any(ALLOWED_HOSTS):
+        import warnings
+        warnings.warn(
+            "ALLOWED_HOSTS is empty in production! "
+            "Set the ALLOWED_HOSTS environment variable.",
+            RuntimeWarning
+        )
