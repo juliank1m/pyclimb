@@ -2,6 +2,63 @@
 
 This guide covers deploying PyClimb to a production environment.
 
+## Quick Deploy to Railway
+
+Railway is the recommended platform for quick deployment.
+
+### 1. Prerequisites
+
+- A [Railway](https://railway.app) account
+- Git repository with your code
+
+### 2. Deploy Steps
+
+1. **Create a new project** on Railway and connect your GitHub repository.
+
+2. **Add a PostgreSQL database** from the Railway dashboard:
+   - Click "New" → "Database" → "PostgreSQL"
+   - Railway will automatically set `DATABASE_URL`
+
+3. **Configure environment variables** in your Railway service settings:
+
+   | Variable | Value |
+   |----------|-------|
+   | `SECRET_KEY` | Generate with: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+   | `DEBUG` | `false` |
+   | `ALLOWED_HOSTS` | Your custom domain (optional, Railway domain is auto-configured) |
+
+4. **Deploy** - Railway will automatically:
+   - Detect the Django project
+   - Install dependencies from `requirements.txt`
+   - Run migrations (via `Procfile` release command)
+   - Start gunicorn
+
+5. **Create a superuser** (one-time setup):
+   ```bash
+   # In Railway shell or via railway CLI
+   railway run python manage.py createsuperuser
+   ```
+
+### 3. Custom Domain (Optional)
+
+1. Go to Settings → Domains in your Railway service
+2. Add your custom domain
+3. Update DNS records as instructed
+4. Add the domain to `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` env vars
+
+### Railway Notes
+
+- Static files are served via WhiteNoise (no nginx required)
+- `DATABASE_URL` is automatically provided when you add PostgreSQL
+- `RAILWAY_PUBLIC_DOMAIN` is set automatically for ALLOWED_HOSTS
+- The `release` command in `Procfile` runs migrations on each deploy
+
+---
+
+## Traditional Server Deployment
+
+For deploying to a VPS or dedicated server.
+
 ## Prerequisites
 
 - Python 3.11+

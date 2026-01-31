@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import dj_database_url
 
 load_dotenv()
 
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,19 +83,30 @@ WSGI_APPLICATION = 'pyclimb.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        "NAME": os.environ.get("DB_NAME", ""),
-        "USER": os.environ.get("DB_USER", ""),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "5432"),
-        "OPTIONS": {
-            "sslmode": os.environ.get("DB_SSLMODE", "disable"),
-        },
+# Database configuration
+# Railway provides DATABASE_URL; fallback to individual env vars for local dev
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            "NAME": os.environ.get("DB_NAME", ""),
+            "USER": os.environ.get("DB_USER", ""),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+            "OPTIONS": {
+                "sslmode": os.environ.get("DB_SSLMODE", "disable"),
+            },
+        }
+    }
 
 
 # Password validation
@@ -131,6 +144,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Whitenoise configuration for serving static files
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Media files (user uploads)
 MEDIA_URL = '/media/'
@@ -207,12 +231,33 @@ if not DEBUG:
             RuntimeWarning
         )
     
-    # Allowed hosts must be configured
+    # Allowed hosts configuration
+    # Railway provides RAILWAY_PUBLIC_DOMAIN automatically
     ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
-    if not any(ALLOWED_HOSTS):
+    RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+    if RAILWAY_PUBLIC_DOMAIN:
+        ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+    
+    # Filter out empty strings
+    ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
+    
+    if not ALLOWED_HOSTS:
         import warnings
         warnings.warn(
             "ALLOWED_HOSTS is empty in production! "
             "Set the ALLOWED_HOSTS environment variable.",
             RuntimeWarning
         )
+    
+    # CSRF trusted origins for Railway
+    CSRF_TRUSTED_ORIGINS = []
+    if RAILWAY_PUBLIC_DOMAIN:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{RAILWAY_PUBLIC_DOMAIN}')
+    
+    # Add any additional trusted origins from environment
+    extra_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+    if extra_origins:
+        CSRF_TRUSTED_ORIGINS.extend(extra_origins.split(','))
+    
+    # Trust the X-Forwarded-Proto header from Railway's proxy
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
