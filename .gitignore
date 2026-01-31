@@ -1,25 +1,58 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyc
+*$py.class
+*.so
 
 # Virtual environments
 .venv/
 venv/
 env/
+ENV/
 
 # Django
 db.sqlite3
 *.log
+staticfiles/
+static_collected/
 
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Media uploads
 media/
 
-# Editor / OS
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+
+# Type checking
+.mypy_cache/
+
+# Editor / IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Secrets (never commit these)
+*.pem
+*.key
+secrets/
