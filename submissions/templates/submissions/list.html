@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}My Submissions | PyClimb{% endblock %}
+
+{% block extra_styles %}
+header.page-header {
+  padding: 24px 0 12px;
+}
+header.page-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+.filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.filters select {
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: var(--card);
+  cursor: pointer;
+}
+.filters select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.submissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(34, 32, 19, 0.06);
+}
+.submissions-table th,
+.submissions-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #efe7d7;
+}
+.submissions-table th {
+  background: #f8f6f0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.submissions-table tr:last-child td {
+  border-bottom: none;
+}
+.submissions-table tr:hover td {
+  background: #faf9f6;
+}
+.submissions-table a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.submissions-table a:hover {
+  text-decoration: underline;
+}
+.verdict-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+.verdict-AC {
+  background: #d4edda;
+  color: var(--success);
+}
+.verdict-WA {
+  background: #f8d7da;
+  color: var(--error);
+}
+.verdict-RE {
+  background: #f8d7da;
+  color: var(--error);
+}
+.verdict-TLE {
+  background: #fff3cd;
+  color: var(--warning);
+}
+.verdict-CE {
+  background: #fff3cd;
+  color: var(--warning);
+}
+.verdict-pending {
+  background: #f0f0f0;
+  color: var(--muted);
+}
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+.empty-state p {
+  font-size: 1.1rem;
+  margin: 0 0 16px;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  list-style: none;
+  padding: 0;
+}
+.pagination a,
+.pagination span {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+.pagination a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pagination .current {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>My Submissions</h1>
+</header>
+
+<form method="get" class="filters">
+  <select name="verdict" onchange="this.form.submit()">
+    <option value="">All Verdicts</option>
+    {% for value, label in verdict_choices %}
+      <option value="{{ value }}" {% if current_verdict == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  {% if current_problem %}
+    <input type="hidden" name="problem" value="{{ current_problem }}">
+  {% endif %}
+</form>
+
+{% if submissions %}
+  <table class="submissions-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Problem</th>
+        <th>Verdict</th>
+        <th>Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for submission in submissions %}
+        <tr>
+          <td>
+            <a href="{% url 'submissions:detail' submission.pk %}">#{{ submission.pk }}</a>
+          </td>
+          <td>
+            <a href="{% url 'problems:detail' submission.problem.slug %}">{{ submission.problem.title }}</a>
+          </td>
+          <td>
+            <span class="verdict-badge verdict-{{ submission.verdict }}">
+              {{ submission.get_verdict_display }}
+            </span>
+          </td>
+          <td>{{ submission.created_at|date:"M j, Y g:i A" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.has_other_pages %}
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li><a href="?page={{ page_obj.previous_page_number }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}{% if current_problem %}&problem={{ current_problem }}{% endif %}">Previous</a></li>
+      {% endif %}
+      
+      <li><span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+      
+      {% if page_obj.has_next %}
+        <li><a href="?page={{ page_obj.next_page_number }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}{% if current_problem %}&problem={{ current_problem }}{% endif %}">Next</a></li>
+      {% endif %}
+    </ul>
+  {% endif %}
+{% else %}
+  <div class="section empty-state">
+    <p>You haven't made any submissions yet.</p>
+    <a href="{% url 'problems:index' %}" class="btn">Browse Problems</a>
+  </div>
+{% endif %}
+{% endblock %}
