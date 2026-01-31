@@ -15,7 +15,8 @@ header.submit-header h1 {
   margin: 0;
   font-size: clamp(1.5rem, 3vw, 2rem);
 }
-textarea {
+/* Hide original textarea when CodeMirror loads */
+textarea#id_code {
   width: 100%;
   padding: 16px;
   font-family: "SF Mono", "Menlo", "Consolas", monospace;
@@ -25,10 +26,19 @@ textarea {
   border-radius: 8px;
   background: #fafafa;
   resize: vertical;
+  min-height: 300px;
 }
-textarea:focus {
+textarea#id_code:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+/* CodeMirror container styling */
+.cm-editor {
+  background: #282c34;
+}
+.cm-editor.cm-focused {
+  outline: none;
   box-shadow: 0 0 0 3px var(--ring);
 }
 .error-list {
@@ -165,29 +175,81 @@ textarea:focus {
   </form>
 </section>
 
+<!-- CodeMirror 5 from CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<style>
+  .CodeMirror {
+    height: auto;
+    min-height: 300px;
+    max-height: 600px;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  }
+  .CodeMirror-scroll {
+    min-height: 300px;
+  }
+</style>
 <script>
-  (function() {
+  document.addEventListener('DOMContentLoaded', function() {
     const DRAFT_KEY = 'pyclimb_draft_{{ problem.slug }}';
-    const textarea = document.querySelector('textarea');
+    const textarea = document.querySelector('textarea#id_code');
     const statusEl = document.getElementById('draft-status');
     const clearBtn = document.getElementById('clear-draft');
     const form = document.getElementById('submit-form');
-    
+
+    if (!textarea) return;
+
+    // Get initial value (from draft or textarea)
+    let initialValue = localStorage.getItem(DRAFT_KEY) || textarea.value || '';
+    if (initialValue && !textarea.value.trim()) {
+      textarea.value = initialValue;
+      updateStatus('Draft restored');
+      clearBtn.style.display = 'inline-block';
+    }
+
+    // Create CodeMirror editor
+    const editor = CodeMirror.fromTextArea(textarea, {
+      mode: 'python',
+      theme: 'dracula',
+      lineNumbers: true,
+      indentUnit: 4,
+      tabSize: 4,
+      indentWithTabs: false,
+      lineWrapping: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      extraKeys: {
+        'Tab': function(cm) {
+          cm.replaceSelection('    ', 'end');
+        }
+      }
+    });
+
+    // Set initial value if from draft
+    if (initialValue) {
+      editor.setValue(initialValue);
+    }
+
     let saveTimeout = null;
-    
-    // Restore draft on page load
-    function restoreDraft() {
-      const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved && !textarea.value.trim()) {
-        textarea.value = saved;
-        updateStatus('Draft restored');
-        clearBtn.style.display = 'inline-block';
+
+    function updateStatus(msg) {
+      statusEl.textContent = msg;
+      statusEl.classList.toggle('saved', msg.includes('saved') || msg.includes('restored'));
+      if (msg) {
+        setTimeout(() => {
+          if (statusEl.textContent === msg) {
+            statusEl.textContent = '';
+          }
+        }, 3000);
       }
     }
-    
-    // Save draft (debounced)
-    function saveDraft() {
-      const code = textarea.value;
+
+    function saveDraft(code) {
       if (code.trim()) {
         localStorage.setItem(DRAFT_KEY, code);
         updateStatus('Draft saved');
@@ -198,62 +260,29 @@ textarea:focus {
         updateStatus('');
       }
     }
-    
-    // Update status message
-    function updateStatus(msg) {
-      statusEl.textContent = msg;
-      statusEl.classList.toggle('saved', msg.includes('saved') || msg.includes('restored'));
-      
-      // Clear status after 3 seconds
-      if (msg) {
-        setTimeout(() => {
-          if (statusEl.textContent === msg) {
-            statusEl.textContent = '';
-          }
-        }, 3000);
-      }
-    }
-    
-    // Clear draft
-    function clearDraft() {
+
+    // Auto-save on change
+    editor.on('change', function() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => saveDraft(editor.getValue()), 500);
+    });
+
+    // Clear button handler
+    clearBtn.addEventListener('click', function() {
       localStorage.removeItem(DRAFT_KEY);
-      textarea.value = '';
+      editor.setValue('');
       clearBtn.style.display = 'none';
       updateStatus('Draft cleared');
-    }
-    
-    // Debounced save on input
-    textarea.addEventListener('input', function() {
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(saveDraft, 500);
     });
-    
-    // Clear button handler
-    clearBtn.addEventListener('click', clearDraft);
-    
-    // Clear draft on successful submission
+
+    // Sync to textarea on form submit
     form.addEventListener('submit', function() {
+      textarea.value = editor.getValue();
       localStorage.removeItem(DRAFT_KEY);
     });
-    
-    // Enable tab key in code textarea
-    textarea.addEventListener('keydown', function(e) {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = this.selectionStart;
-        const end = this.selectionEnd;
-        const value = this.value;
-        // Insert 4 spaces (Python standard)
-        this.value = value.substring(0, start) + '    ' + value.substring(end);
-        this.selectionStart = this.selectionEnd = start + 4;
-        // Trigger save
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(saveDraft, 500);
-      }
-    });
-    
-    // Initialize
-    restoreDraft();
-  })();
+
+    // Store editor reference
+    window.codeEditor = editor;
+  });
 </script>
 {% endblock %}
