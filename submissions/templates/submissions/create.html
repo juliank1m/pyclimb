@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Submit | {{ problem.title }} | PyClimb</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --ink: #222013;
+        --accent: #d46b1a;
+        --card: #ffffff;
+        --muted: #6c6555;
+        --ring: rgba(212, 107, 26, 0.3);
+        --error: #c0392b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Garamond", "Times New Roman", serif;
+        color: var(--ink);
+        background: radial-gradient(900px 500px at 90% 0%, #fff4de 0%, var(--bg) 60%);
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto 64px;
+        padding: 36px 20px 0;
+      }
+      a.back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+      }
+      header {
+        margin: 18px 0 24px;
+        padding: 24px;
+        background: var(--card);
+        border-radius: 16px;
+        border: 1px solid #efe7d7;
+        box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+      }
+      .section {
+        margin-top: 22px;
+        padding: 20px 24px;
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid #efe7d7;
+      }
+      .section h2 {
+        margin: 0 0 16px;
+        font-size: 1.2rem;
+        letter-spacing: 0.02em;
+      }
+      textarea {
+        width: 100%;
+        padding: 16px;
+        font-family: "SF Mono", "Menlo", "Consolas", monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+        resize: vertical;
+      }
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--ring);
+      }
+      .btn {
+        display: inline-block;
+        margin-top: 16px;
+        padding: 12px 32px;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        background: var(--accent);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .btn:hover {
+        background: #b85a15;
+      }
+      .error-list {
+        margin: 0 0 16px;
+        padding: 12px 16px;
+        background: #fdf2f2;
+        border: 1px solid var(--error);
+        border-radius: 8px;
+        color: var(--error);
+        list-style: none;
+      }
+      .format-guide {
+        margin-bottom: 20px;
+        padding: 16px;
+        background: #f8f6f0;
+        border-radius: 10px;
+        border-left: 4px solid var(--accent);
+      }
+      .format-guide h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+        color: var(--accent);
+      }
+      .format-guide p {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      .format-guide code {
+        background: #e8e4dc;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 0.9em;
+      }
+      .format-guide ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        font-size: 0.95rem;
+      }
+      .format-guide li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="{% url 'problems:detail' problem.slug %}">← Back to {{ problem.title }}</a>
+      
+      <header>
+        <h1>Submit Solution</h1>
+        <p style="margin: 8px 0 0; color: var(--muted);">{{ problem.title }}</p>
+      </header>
+
+      <section class="section">
+        <h2>Your Code</h2>
+        
+        {% if problem.judge_mode == 'function' %}
+          {# Function-call mode guidance #}
+          <div class="format-guide">
+            <h3>Submission Format</h3>
+            {% if problem.entrypoint_type == 'class' %}
+              <p>Implement a <code>Solution</code> class with a <code>{{ problem.entrypoint_name }}</code> method.</p>
+              <p>Your method will be called with test inputs and should <strong>return</strong> the answer.</p>
+            {% else %}
+              <p>Implement a function called <code>{{ problem.entrypoint_name }}</code>.</p>
+              <p>Your function will be called with test inputs and should <strong>return</strong> the answer.</p>
+            {% endif %}
+            {% if problem.signature_text %}
+              <p style="margin-top: 10px;"><strong>Signature:</strong> <code>{{ problem.signature_text }}</code></p>
+            {% endif %}
+          </div>
+        {% else %}
+          {# Standard I/O mode guidance #}
+          <div class="format-guide">
+            <h3>Input/Output Format</h3>
+            <p>Your code should:</p>
+            <ul>
+              <li>Read input using <code>input()</code></li>
+              <li>Print output using <code>print()</code></li>
+            </ul>
+            <p style="margin-top: 12px; color: var(--muted); font-size: 0.9rem;">
+              See the Examples section on the problem page for the exact input/output format.
+            </p>
+          </div>
+        {% endif %}
+
+        {% if form.errors %}
+          <ul class="error-list">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          {{ form.code }}
+          <button type="submit" class="btn">Submit</button>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      // Enable tab key in code textarea
+      document.querySelector('textarea').addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = this.selectionStart;
+          const end = this.selectionEnd;
+          const value = this.value;
+          // Insert 4 spaces (Python standard)
+          this.value = value.substring(0, start) + '    ' + value.substring(end);
+          this.selectionStart = this.selectionEnd = start + 4;
+        }
+      });
+    </script>
+  </body>
+</html>

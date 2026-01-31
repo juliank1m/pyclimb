@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Submission #{{ submission.pk }} | PyClimb</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --ink: #222013;
+        --accent: #d46b1a;
+        --card: #ffffff;
+        --muted: #6c6555;
+        --ring: rgba(212, 107, 26, 0.3);
+        --success: #27ae60;
+        --error: #c0392b;
+        --warning: #f39c12;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Garamond", "Times New Roman", serif;
+        color: var(--ink);
+        background: radial-gradient(900px 500px at 90% 0%, #fff4de 0%, var(--bg) 60%);
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto 64px;
+        padding: 36px 20px 0;
+      }
+      a.back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+      }
+      header {
+        margin: 18px 0 24px;
+        padding: 24px;
+        background: var(--card);
+        border-radius: 16px;
+        border: 1px solid #efe7d7;
+        box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .section {
+        margin-top: 22px;
+        padding: 20px 24px;
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid #efe7d7;
+      }
+      .section h2 {
+        margin: 0 0 16px;
+        font-size: 1.2rem;
+        letter-spacing: 0.02em;
+      }
+      .verdict-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        border-radius: 999px;
+      }
+      .verdict-pending {
+        background: #f0f0f0;
+        color: var(--muted);
+      }
+      .verdict-AC {
+        background: #d4edda;
+        color: var(--success);
+      }
+      .verdict-WA {
+        background: #f8d7da;
+        color: var(--error);
+      }
+      .verdict-RE {
+        background: #f8d7da;
+        color: var(--error);
+      }
+      .verdict-TLE {
+        background: #fff3cd;
+        color: var(--warning);
+      }
+      .verdict-CE {
+        background: #fff3cd;
+        color: var(--warning);
+      }
+      pre.code {
+        margin: 0;
+        padding: 16px;
+        font-family: "SF Mono", "Menlo", "Consolas", monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        background: #fafafa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      
+      /* Test case results */
+      .test-case {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+      }
+      .test-case:first-of-type {
+        margin-top: 0;
+      }
+      .test-case.passed {
+        background: #f0fff4;
+        border-color: #c3e6cb;
+      }
+      .test-case.failed {
+        background: #fff5f5;
+        border-color: #f5c6cb;
+      }
+      .test-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .test-title {
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .test-verdict {
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 999px;
+      }
+      .test-verdict.passed {
+        background: #d4edda;
+        color: var(--success);
+      }
+      .test-verdict.failed {
+        background: #f8d7da;
+        color: var(--error);
+      }
+      .test-detail {
+        margin-top: 12px;
+      }
+      .test-detail-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .test-detail pre {
+        margin: 0;
+        padding: 10px 12px;
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 13px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        white-space: pre-wrap;
+      }
+      .diff-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .diff-expected pre {
+        border-color: #c3e6cb;
+        background: #f0fff4;
+      }
+      .diff-actual pre {
+        border-color: #f5c6cb;
+        background: #fff5f5;
+      }
+      .hidden-test-summary {
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: var(--bg);
+        border-radius: 8px;
+        font-size: 0.95rem;
+      }
+      
+      /* Error display */
+      .error-section {
+        margin-top: 16px;
+        padding: 16px;
+        background: #fff5f5;
+        border-radius: 10px;
+        border: 1px solid #f5c6cb;
+      }
+      .error-section h3 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+        color: var(--error);
+      }
+      .error-section pre {
+        margin: 0;
+        padding: 12px;
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 12px;
+        background: #fff;
+        border: 1px solid #f5c6cb;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        color: var(--error);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="{% url 'problems:detail' submission.problem.slug %}">← Back to {{ submission.problem.title }}</a>
+      
+      <header>
+        <h1>Submission #{{ submission.pk }}</h1>
+        <p class="meta">
+          {{ submission.problem.title }} · 
+          Submitted {{ submission.created_at|date:"M j, Y g:i A" }}
+        </p>
+      </header>
+
+      <section class="section">
+        <h2>Result</h2>
+        <span class="verdict-badge verdict-{{ submission.verdict }}">
+          {{ submission.get_verdict_display }}
+        </span>
+        
+        {% if submission.status == 'pending' %}
+          <p style="margin: 12px 0 0; color: var(--muted);">
+            <em>Your submission is queued for judging.</em>
+          </p>
+        {% elif submission.status == 'running' %}
+          <p style="margin: 12px 0 0; color: var(--muted);">
+            <em>Your submission is being judged...</em>
+          </p>
+        {% endif %}
+      </section>
+
+      {% if submission.verdict == 'CE' and submission.stderr %}
+        <section class="section">
+          <h2>Syntax Error</h2>
+          <pre class="code" style="background: #fff5f5; border-color: #f5c6cb; color: var(--error);">{{ submission.stderr }}</pre>
+        </section>
+      {% endif %}
+
+      {% if submission.test_results %}
+        <section class="section">
+          <h2>Test Cases</h2>
+          
+          {% for result in submission.test_results %}
+            {% if result.is_sample %}
+              <div class="test-case {% if result.passed %}passed{% else %}failed{% endif %}">
+                <div class="test-header">
+                  <span class="test-title">Sample Test {{ forloop.counter }}</span>
+                  <span class="test-verdict {% if result.passed %}passed{% else %}failed{% endif %}">
+                    {% if result.passed %}Passed{% else %}{{ result.verdict }}{% endif %}
+                  </span>
+                </div>
+                
+                {% if result.input_display %}
+                  <div class="test-detail">
+                    <div class="test-detail-label">Input</div>
+                    <pre>{{ result.input_display }}</pre>
+                  </div>
+                {% endif %}
+                
+                {% if not result.passed %}
+                  <div class="diff-container">
+                    <div class="diff-expected">
+                      <div class="test-detail-label">Expected Output</div>
+                      <pre>{{ result.expected }}</pre>
+                    </div>
+                    <div class="diff-actual">
+                      <div class="test-detail-label">Your Output</div>
+                      <pre>{% if result.stdout %}{{ result.stdout }}{% else %}<em style="color: var(--muted);">(no output)</em>{% endif %}</pre>
+                    </div>
+                  </div>
+                  
+                  {% if result.stderr %}
+                    <div class="error-section">
+                      <h3>Runtime Error</h3>
+                      <pre>{{ result.stderr }}</pre>
+                    </div>
+                  {% endif %}
+                {% else %}
+                  <div class="test-detail">
+                    <div class="test-detail-label">Output</div>
+                    <pre>{{ result.stdout }}</pre>
+                  </div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+          
+          {% with hidden_results=submission.test_results %}
+            {% if hidden_results %}
+              {% with hidden_passed=0 hidden_total=0 %}
+                {% for r in hidden_results %}
+                  {% if not r.is_sample %}
+                    {% if r.passed %}
+                      <!-- hidden passed -->
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endwith %}
+              
+              <div class="hidden-test-summary">
+                <strong>Hidden Tests:</strong>
+                {% with sample_count=0 hidden_count=0 hidden_passed=0 %}
+                  {% for r in hidden_results %}
+                    {% if not r.is_sample %}
+                      {% if r.passed %}
+                        <!-- count passed -->
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if submission.verdict == 'AC' %}
+                    All hidden tests passed.
+                  {% else %}
+                    Some hidden tests failed. (Details hidden to prevent guessing.)
+                  {% endif %}
+                {% endwith %}
+              </div>
+            {% endif %}
+          {% endwith %}
+        </section>
+      {% endif %}
+
+      <section class="section">
+        <h2>Your Code</h2>
+        <pre class="code">{{ submission.code }}</pre>
+      </section>
+
+      <div style="margin-top: 24px;">
+        <a class="back" href="{% url 'submissions:create' submission.problem.slug %}">← Submit Again</a>
+      </div>
+    </main>
+  </body>
+</html>
