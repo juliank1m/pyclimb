@@ -166,12 +166,14 @@ bwrap --unshare-net --unshare-pid --die-with-parent \
 - [ ] Add seccomp filtering (Linux only)
 - **Suitable for:** Private deployment with semi-trusted users
 
-### Phase 3: Container Isolation
-- [ ] Docker-per-submission execution
-- [ ] Network isolation
-- [ ] Filesystem isolation
-- [ ] Resource limits via cgroups
-- **Suitable for:** Public deployment
+### Phase 3: Container Isolation ✅ IMPLEMENTED
+- [x] Docker-per-submission execution
+- [x] Network isolation (`--network none`)
+- [x] Filesystem isolation (`--read-only`)
+- [x] Resource limits via Docker (`--memory`, `--cpus`, `--pids-limit`)
+- [x] Dropped capabilities (`--cap-drop ALL`)
+- [x] No privilege escalation (`--security-opt no-new-privileges`)
+- **Suitable for:** Public deployment (when enabled)
 
 ### Phase 4: Production Hardening
 - [ ] Rate limiting per user/IP
@@ -179,6 +181,74 @@ bwrap --unshare-net --unshare-pid --die-with-parent \
 - [ ] Monitoring and alerting
 - [ ] Abuse detection
 - **Suitable for:** Public internet at scale
+
+---
+
+## Docker Sandbox (Phase 3)
+
+PyClimb now includes a Docker-based sandbox for secure code execution.
+
+### Enabling the Sandbox
+
+1. **Build the sandbox image:**
+   ```bash
+   cd sandbox
+   docker build -t pyclimb-sandbox .
+   ```
+
+2. **Enable sandbox mode** via environment variable:
+   ```bash
+   export PYCLIMB_USE_SANDBOX=true
+   ```
+
+   Or in Django settings:
+   ```python
+   PYCLIMB_USE_SANDBOX = True
+   ```
+
+### Sandbox Security Features
+
+| Feature | Implementation | Effect |
+|---------|----------------|--------|
+| **No network** | `--network none` | Cannot make outbound connections |
+| **Memory limit** | `--memory 128m` | OOM-killed if exceeded |
+| **CPU limit** | `--cpus 0.5` | Throttled CPU usage |
+| **Process limit** | `--pids-limit 50` | Prevents fork bombs |
+| **Read-only FS** | `--read-only` | Cannot write to filesystem |
+| **Writable /tmp** | `--tmpfs /tmp:size=10m` | Limited temp space |
+| **No privileges** | `--security-opt no-new-privileges` | Cannot escalate |
+| **No capabilities** | `--cap-drop ALL` | Minimal permissions |
+| **Non-root user** | Container runs as `runner` | Limited access |
+| **Timeout** | `timeout` command | Killed after time limit |
+
+### Configuration Options
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PYCLIMB_USE_SANDBOX` | `false` | Enable Docker sandbox |
+| `PYCLIMB_SANDBOX_IMAGE` | `pyclimb-sandbox` | Docker image name |
+| `PYCLIMB_SANDBOX_TIMEOUT` | `5` | Execution timeout (seconds) |
+| `PYCLIMB_SANDBOX_MEMORY` | `128m` | Memory limit |
+| `PYCLIMB_SANDBOX_CPUS` | `0.5` | CPU limit |
+
+### Testing the Sandbox
+
+```bash
+# Verify network is blocked
+echo 'import urllib.request; urllib.request.urlopen("https://example.com")' | \
+  python -c "from submissions.services.sandbox import run_in_sandbox; print(run_in_sandbox(open('/dev/stdin').read(), ''))"
+# Should fail with network error
+
+# Verify filesystem is read-only  
+echo 'open("/evil.txt", "w").write("pwned")' | \
+  python -c "from submissions.services.sandbox import run_in_sandbox; print(run_in_sandbox(open('/dev/stdin').read(), ''))"
+# Should fail with read-only filesystem error
+```
+
+### Fallback Behavior
+
+If Docker is unavailable or sandbox mode is disabled, the runner uses the original
+subprocess-based execution. The application logs will indicate which mode is active.
 
 ---
 
@@ -211,11 +281,14 @@ If you suspect a security breach:
 
 ## Summary
 
-| Deployment Scenario | Current Safety | Recommendation |
-|---------------------|----------------|----------------|
-| Local development (just you) | ✅ Acceptable | Use as-is |
-| Private LAN (trusted users) | ⚠️ Risky | Add memory limits |
-| Private internet (friends) | ⚠️ Risky | Add container isolation |
-| Public internet | ❌ Unsafe | Full container isolation required |
+| Deployment Scenario | Without Sandbox | With Sandbox Enabled |
+|---------------------|-----------------|----------------------|
+| Local development (just you) | ✅ Acceptable | ✅ Acceptable |
+| Private LAN (trusted users) | ⚠️ Risky | ✅ Safe |
+| Private internet (friends) | ⚠️ Risky | ✅ Safe |
+| Public internet | ❌ Unsafe | ✅ Safe (with Phase 4) |
 
-**Bottom line:** The current implementation is fine for learning and local development. Do not expose to the public internet without container isolation.
+**Bottom line:** 
+- For local development, sandbox mode is optional.
+- For any deployment with untrusted users, **enable sandbox mode** (`PYCLIMB_USE_SANDBOX=true`).
+- For public internet deployment, also implement Phase 4 (rate limiting, queues, monitoring).

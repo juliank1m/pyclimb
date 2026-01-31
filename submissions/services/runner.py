@@ -7,8 +7,11 @@ Executes user code in a subprocess with:
 - Isolated temporary directory
 - No network access (best-effort via short timeout)
 
-WARNING: This is MVP-level safety. Not suitable for untrusted public internet use.
-See SECURITY.md for production requirements.
+When sandbox mode is enabled (PYCLIMB_USE_SANDBOX=true), code runs in
+isolated Docker containers with full network/filesystem isolation.
+
+WARNING: Without sandbox mode, this is MVP-level safety. Not suitable for
+untrusted public internet use. See SECURITY.md for production requirements.
 """
 
 import json
@@ -19,12 +22,34 @@ from pathlib import Path
 from typing import Any
 
 from .harness import get_harness_code
+from .sandbox import (
+    is_sandbox_enabled,
+    is_docker_available,
+    run_in_sandbox,
+    run_function_in_sandbox,
+    SandboxResult
+)
 
 
 # Safety constants
 DEFAULT_TIMEOUT_SECONDS = 2
 MAX_OUTPUT_BYTES = 65536  # 64KB max output
 MAX_CODE_BYTES = 50000    # 50KB max code
+
+# Cache Docker availability check
+_docker_available = None
+
+def _check_sandbox_mode() -> bool:
+    """Check if sandbox mode should be used."""
+    global _docker_available
+    
+    if not is_sandbox_enabled():
+        return False
+    
+    if _docker_available is None:
+        _docker_available = is_docker_available()
+    
+    return _docker_available
 
 
 @dataclass
@@ -50,7 +75,7 @@ class FunctionCallResult:
 
 def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOUT_SECONDS) -> RunResult:
     """
-    Execute Python code in a subprocess.
+    Execute Python code in a subprocess (or Docker sandbox if enabled).
     
     Args:
         code: The Python source code to execute
@@ -67,6 +92,17 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
             exit_code=-1,
             timed_out=False,
             error='Code exceeds maximum size limit'
+        )
+    
+    # Use Docker sandbox if enabled and available
+    if _check_sandbox_mode():
+        sandbox_result = run_in_sandbox(code, stdin_input, timeout=int(timeout))
+        return RunResult(
+            stdout=sandbox_result.stdout,
+            stderr=sandbox_result.stderr,
+            exit_code=sandbox_result.exit_code,
+            timed_out=sandbox_result.timed_out,
+            error=sandbox_result.error
         )
 
     # Create a temporary directory for isolation
@@ -142,6 +178,8 @@ def run_function_call(
     Writes the user's code as submission.py, creates a harness runner.py,
     passes arguments via input.json, and captures the JSON result.
     
+    When sandbox mode is enabled, runs in a Docker container.
+    
     Args:
         code: The user's Python source code
         entrypoint_type: 'class' for Solution class, 'function' for bare function
@@ -161,15 +199,87 @@ def run_function_call(
             traceback='',
             timed_out=False
         )
+    
+    # Get harness code
+    harness_code = get_harness_code(entrypoint_type, entrypoint_name)
+    
+    # Use Docker sandbox if enabled and available
+    if _check_sandbox_mode():
+        sandbox_result = run_function_in_sandbox(
+            code, harness_code, args_json, timeout=int(timeout)
+        )
+        
+        if sandbox_result.timed_out:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='timeout',
+                error_message='Time limit exceeded',
+                traceback='',
+                timed_out=True
+            )
+        
+        if sandbox_result.error:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='internal',
+                error_message=sandbox_result.error,
+                traceback='',
+                timed_out=False
+            )
+        
+        # Parse JSON output from harness
+        stdout = sandbox_result.stdout.strip()
+        if not stdout:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='internal',
+                error_message='Harness produced no output',
+                traceback=sandbox_result.stderr[:MAX_OUTPUT_BYTES],
+                timed_out=False
+            )
+        
+        try:
+            output = json.loads(stdout)
+        except json.JSONDecodeError:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='internal',
+                error_message=f'Harness output not valid JSON: {stdout[:200]}',
+                traceback=sandbox_result.stderr[:MAX_OUTPUT_BYTES],
+                timed_out=False
+            )
+        
+        if output.get('ok'):
+            return FunctionCallResult(
+                success=True,
+                result=output['result'],
+                error_type=None,
+                error_message='',
+                traceback='',
+                timed_out=False
+            )
+        else:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type=output.get('error', 'unknown'),
+                error_message=output.get('message', 'Unknown error'),
+                traceback=output.get('traceback', ''),
+                timed_out=False
+            )
 
+    # Fallback: run in subprocess (not sandboxed)
     with tempfile.TemporaryDirectory(prefix='pyclimb_fc_') as tmpdir:
         tmppath = Path(tmpdir)
         
         # Write user code as submission.py
         (tmppath / 'submission.py').write_text(code, encoding='utf-8')
         
-        # Write harness runner
-        harness_code = get_harness_code(entrypoint_type, entrypoint_name)
+        # Write harness runner (harness_code already defined above)
         (tmppath / 'runner.py').write_text(harness_code, encoding='utf-8')
         
         # Write input arguments
