@@ -13,6 +13,49 @@ from problems.models import Problem
 from submissions.models import Submission, Verdict
 
 
+def home(request):
+    """Homepage with overview and featured problems."""
+    # Get published problem counts by difficulty
+    problems = Problem.objects.filter(is_published=True)
+    total_problems = problems.count()
+    easy_count = problems.filter(difficulty=1).count()
+    medium_count = problems.filter(difficulty=2).count()
+    hard_count = problems.filter(difficulty=3).count()
+    
+    # Get featured problems (a mix of difficulties, most recent)
+    featured_problems = list(problems.order_by('-created_at')[:6])
+    
+    # User-specific stats
+    solved_count = 0
+    solved_problem_ids = set()
+    if request.user.is_authenticated:
+        solved_problem_ids = set(
+            Submission.objects.filter(
+                user=request.user,
+                verdict=Verdict.ACCEPTED
+            ).values_list('problem_id', flat=True).distinct()
+        )
+        solved_count = len(solved_problem_ids)
+    
+    # Total users and submissions for site stats
+    total_users = User.objects.count()
+    total_submissions = Submission.objects.count()
+    
+    context = {
+        'total_problems': total_problems,
+        'easy_count': easy_count,
+        'medium_count': medium_count,
+        'hard_count': hard_count,
+        'featured_problems': featured_problems,
+        'solved_count': solved_count,
+        'solved_problem_ids': solved_problem_ids,
+        'total_users': total_users,
+        'total_submissions': total_submissions,
+    }
+    
+    return render(request, 'home.html', context)
+
+
 def send_verification_email(request, user, profile):
     """Send email verification link to user."""
     token = profile.generate_verification_token()

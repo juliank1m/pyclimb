@@ -21,6 +21,7 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
+    path('', views.home, name='home'),
     path('problems/', include("problems.urls")),
     path('submissions/', include("submissions.urls")),
     path('leaderboard/', views.leaderboard, name='leaderboard'),
