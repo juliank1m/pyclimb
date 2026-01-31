@@ -8,14 +8,17 @@ def add_tags_and_problems(apps, schema_editor):
     TestCase = apps.get_model('problems', 'TestCase')
     Tag = apps.get_model('problems', 'Tag')
 
-    # Create additional tags
+    # Create additional tags (must set slug explicitly in migrations)
+    from django.template.defaultfilters import slugify
     additional_tags = [
         'Sorting', 'Greedy', 'Backtracking', 'Bit Manipulation',
         'Matrix', 'Stack', 'Queue', 'Math', 'Simulation',
         'Sliding Window', 'Prefix Sum', 'Trees', 'Graphs',
     ]
     for tag_name in additional_tags:
-        Tag.objects.get_or_create(name=tag_name)
+        tag_slug = slugify(tag_name)
+        if not Tag.objects.filter(slug=tag_slug).exists():
+            Tag.objects.create(name=tag_name, slug=tag_slug)
 
     def get_tag(name):
         try:
