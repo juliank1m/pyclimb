@@ -1,7 +1,18 @@
 from django.contrib import admin
 from django import forms
-from .models import Problem, TestCase
+from .models import Problem, TestCase, Tag
 from django.db import models
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'problem_count']
+    search_fields = ['name']
+    prepopulated_fields = {'slug': ('name',)}
+
+    def problem_count(self, obj):
+        return obj.problems.count()
+    problem_count.short_description = 'Problems'
 
 
 class TestCaseInline(admin.TabularInline):
@@ -25,11 +36,12 @@ class ProblemAdmin(admin.ModelAdmin):
     inlines = [TestCaseInline]
 
     # List view configuration
-    list_display = ['title', 'difficulty', 'judge_mode', 'is_published', 'created_at']
-    list_filter = ['difficulty', 'is_published', 'judge_mode']
+    list_display = ['title', 'difficulty', 'judge_mode', 'tag_list', 'is_published', 'created_at']
+    list_filter = ['difficulty', 'is_published', 'judge_mode', 'tags']
     list_editable = ['is_published']
     search_fields = ['title', 'description']
     ordering = ['-created_at']
+    filter_horizontal = ['tags']
 
     # Detail view configuration
     prepopulated_fields = {'slug': ('title',)}
@@ -37,7 +49,7 @@ class ProblemAdmin(admin.ModelAdmin):
 
     fieldsets = [
         (None, {
-            'fields': ['title', 'slug', 'difficulty', 'is_published']
+            'fields': ['title', 'slug', 'difficulty', 'tags', 'is_published']
         }),
         ('Content', {
             'fields': ['description', 'constraints', 'follow_up'],
@@ -55,3 +67,7 @@ class ProblemAdmin(admin.ModelAdmin):
             'classes': ['collapse'],
         }),
     ]
+
+    def tag_list(self, obj):
+        return ', '.join(t.name for t in obj.tags.all())
+    tag_list.short_description = 'Tags'

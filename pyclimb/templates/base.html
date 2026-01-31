@@ -139,6 +139,7 @@
       <a class="brand" href="{% url 'problems:index' %}">PyClimb</a>
       <div class="nav-links">
         <a href="{% url 'problems:index' %}">Problems</a>
+        <a href="{% url 'leaderboard' %}">Leaderboard</a>
         {% if user.is_authenticated %}
           <a href="{% url 'submissions:list' %}">My Submissions</a>
           <a href="{% url 'profile' %}">{{ user.username }}</a>

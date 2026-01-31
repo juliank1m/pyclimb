@@ -222,6 +222,9 @@ pre.code code.hljs {
   <p class="meta">
     {{ submission.problem.title }} · 
     Submitted {{ submission.created_at|date:"M j, Y g:i A" }}
+    {% if submission.execution_time_ms is not None %}
+      · Runtime: ~{{ submission.execution_time_ms }} ms
+    {% endif %}
   </p>
 </header>
 

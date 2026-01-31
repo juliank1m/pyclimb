@@ -35,6 +35,7 @@ class TestCaseResult:
     stderr: str
     expected: str  # Only populated for samples
     input_display: str  # Only populated for samples
+    elapsed_ms: int = 0  # Execution time for this test case
 
 
 @dataclass 
@@ -45,6 +46,7 @@ class JudgeResult:
     stdout: str  # Combined/summary stdout for display
     stderr: str  # Combined/summary stderr for display
     failed_test_index: int | None  # 1-indexed, for display
+    total_time_ms: int = 0  # Total execution time across all test cases
 
 
 def check_syntax(code: str) -> tuple[bool, str]:
@@ -94,7 +96,8 @@ def judge_stdin_stdout(submission: Submission) -> JudgeResult:
             test_results=[],
             stdout='',
             stderr=f"Syntax Error:\n{syntax_error}",
-            failed_test_index=None
+            failed_test_index=None,
+            total_time_ms=0
         )
     
     test_cases = list(problem.test_cases.order_by('-is_sample', 'id'))
@@ -105,7 +108,8 @@ def judge_stdin_stdout(submission: Submission) -> JudgeResult:
             test_results=[],
             stdout='No test cases defined.',
             stderr='',
-            failed_test_index=None
+            failed_test_index=None,
+            total_time_ms=0
         )
     
     test_results: list[TestCaseResult] = []
@@ -113,9 +117,11 @@ def judge_stdin_stdout(submission: Submission) -> JudgeResult:
     failed_index = None
     combined_stdout = ''
     combined_stderr = ''
+    total_time_ms = 0
     
     for i, tc in enumerate(test_cases, start=1):
         result = run_python_code(code, tc.input_data)
+        total_time_ms += result.elapsed_ms
         
         if result.error:
             tc_verdict = Verdict.RUNTIME_ERROR
@@ -142,6 +148,7 @@ def judge_stdin_stdout(submission: Submission) -> JudgeResult:
             stderr=result.stderr if tc.is_sample else '',
             expected=tc.expected_output if tc.is_sample else '',
             input_display=tc.display_input if tc.is_sample else '',
+            elapsed_ms=result.elapsed_ms,
         )
         test_results.append(tc_result)
         
@@ -161,7 +168,8 @@ def judge_stdin_stdout(submission: Submission) -> JudgeResult:
         test_results=test_results,
         stdout=combined_stdout,
         stderr=combined_stderr,
-        failed_test_index=failed_index
+        failed_test_index=failed_index,
+        total_time_ms=total_time_ms
     )
 
 
@@ -180,7 +188,8 @@ def judge_function_call(submission: Submission) -> JudgeResult:
             test_results=[],
             stdout='',
             stderr='Problem configuration error: no entrypoint name specified.',
-            failed_test_index=None
+            failed_test_index=None,
+            total_time_ms=0
         )
     
     test_cases = list(problem.test_cases.order_by('-is_sample', 'id'))
@@ -191,7 +200,8 @@ def judge_function_call(submission: Submission) -> JudgeResult:
             test_results=[],
             stdout='No test cases defined.',
             stderr='',
-            failed_test_index=None
+            failed_test_index=None,
+            total_time_ms=0
         )
     
     test_results: list[TestCaseResult] = []
@@ -199,6 +209,7 @@ def judge_function_call(submission: Submission) -> JudgeResult:
     failed_index = None
     combined_stdout = ''
     combined_stderr = ''
+    total_time_ms = 0
     
     for i, tc in enumerate(test_cases, start=1):
         # Run the function call
@@ -208,6 +219,7 @@ def judge_function_call(submission: Submission) -> JudgeResult:
             entrypoint_name=entrypoint_name,
             args_json=tc.input_data
         )
+        total_time_ms += result.elapsed_ms
         
         # Parse expected output
         try:
@@ -220,7 +232,8 @@ def judge_function_call(submission: Submission) -> JudgeResult:
             error_msg = f'Invalid expected output JSON: {tc.expected_output}'
             result = FunctionCallResult(
                 success=False, result=None, error_type='internal',
-                error_message=error_msg, traceback='', timed_out=False
+                error_message=error_msg, traceback='', timed_out=False,
+                elapsed_ms=result.elapsed_ms
             )
         
         if result.success:
@@ -260,6 +273,7 @@ def judge_function_call(submission: Submission) -> JudgeResult:
             stderr=error_display if tc.is_sample else '',
             expected=format_value_for_display(expected_value) if tc.is_sample else '',
             input_display=tc.display_input if tc.is_sample else '',
+            elapsed_ms=result.elapsed_ms,
         )
         test_results.append(tc_result)
         
@@ -279,7 +293,8 @@ def judge_function_call(submission: Submission) -> JudgeResult:
         test_results=test_results,
         stdout=combined_stdout,
         stderr=combined_stderr,
-        failed_test_index=failed_index
+        failed_test_index=failed_index,
+        total_time_ms=total_time_ms
     )
 
 
@@ -308,7 +323,7 @@ def run_judge(submission: Submission) -> None:
     Run the judge and update the submission in-place.
     
     This is the function called from the view after submission creation.
-    It updates the submission's status, verdict, stdout, stderr, and test_results.
+    It updates the submission's status, verdict, stdout, stderr, test_results, and execution_time_ms.
     """
     # Mark as running
     submission.status = SubmissionStatus.RUNNING
@@ -328,6 +343,7 @@ def run_judge(submission: Submission) -> None:
                 'stderr': tr.stderr,
                 'expected': tr.expected,
                 'input_display': tr.input_display,
+                'elapsed_ms': tr.elapsed_ms,
             }
             for tr in result.test_results
         ]
@@ -337,8 +353,9 @@ def run_judge(submission: Submission) -> None:
         submission.stdout = result.stdout
         submission.stderr = result.stderr
         submission.test_results = test_results_json
+        submission.execution_time_ms = result.total_time_ms
         submission.status = SubmissionStatus.DONE
-        submission.save(update_fields=['verdict', 'stdout', 'stderr', 'test_results', 'status'])
+        submission.save(update_fields=['verdict', 'stdout', 'stderr', 'test_results', 'execution_time_ms', 'status'])
         
     except Exception as e:
         # Internal error - not the user's fault

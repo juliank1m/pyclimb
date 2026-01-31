@@ -5,3 +5,7 @@ python-dotenv>=1.2.1
 
 # Optional: For production deployment
 gunicorn>=21.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-django>=4.7.0

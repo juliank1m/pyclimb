@@ -165,11 +165,75 @@
   padding: 32px;
   color: var(--muted);
 }
+.verification-banner {
+  padding: 16px 20px;
+  background: #fff8e6;
+  border: 1px solid #f39c12;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.verification-banner p {
+  margin: 0;
+  color: #856404;
+  font-size: 0.95rem;
+}
+.verification-banner a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.verification-banner a:hover {
+  text-decoration: underline;
+}
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--success);
+  background: #d4edda;
+  border-radius: 999px;
+  margin-left: 12px;
+}
+.verified-badge svg {
+  width: 14px;
+  height: 14px;
+}
 {% endblock %}
 
 {% block content %}
+{% if messages %}
+  {% for message in messages %}
+    <div class="verification-banner" style="{% if message.tags == 'success' %}background: #d4edda; border-color: #27ae60;{% elif message.tags == 'error' %}background: #f8d7da; border-color: #c0392b;{% endif %}">
+      <p style="{% if message.tags == 'success' %}color: #155724;{% elif message.tags == 'error' %}color: #721c24;{% endif %}">{{ message }}</p>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if user_profile and not user_profile.is_verified and user.email %}
+  <div class="verification-banner">
+    <p>Your email address has not been verified. Please check your inbox for the verification link.</p>
+    <a href="{% url 'resend_verification' %}">Resend verification email</a>
+  </div>
+{% endif %}
+
 <div class="profile-header">
-  <h1>{{ user.username }}</h1>
+  <h1>
+    {{ user.username }}
+    {% if user_profile.is_verified %}
+      <span class="verified-badge">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Verified
+      </span>
+    {% endif %}
+  </h1>
   <p class="member-since">Member since {{ user.date_joined|date:"F Y" }}</p>
 </div>
 

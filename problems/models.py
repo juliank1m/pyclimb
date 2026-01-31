@@ -11,6 +11,23 @@ DIFFICULTY_CHOICES = [
 ]
 
 
+class Tag(models.Model):
+    """A category tag for problems (e.g., 'arrays', 'dynamic programming')."""
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=60, unique=True, blank=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
 class JudgeMode(models.TextChoices):
     """How the judge executes and evaluates submissions."""
     STDIN_STDOUT = 'stdin', 'Standard I/O'
@@ -30,6 +47,7 @@ class Problem(models.Model):
     constraints = models.TextField(blank=True)
     follow_up = models.TextField(blank=True)
     difficulty = models.IntegerField(choices=DIFFICULTY_CHOICES)
+    tags = models.ManyToManyField(Tag, blank=True, related_name='problems')
 
     # Judge configuration
     judge_mode = models.CharField(

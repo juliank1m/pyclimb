@@ -17,6 +17,7 @@ untrusted public internet use. See SECURITY.md for production requirements.
 import json
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,7 @@ class RunResult:
     stderr: str
     exit_code: int
     timed_out: bool
+    elapsed_ms: int = 0  # Wall-clock execution time in milliseconds
     error: str | None = None  # Internal error (not user's fault)
 
 
@@ -71,6 +73,7 @@ class FunctionCallResult:
     error_message: str
     traceback: str
     timed_out: bool
+    elapsed_ms: int = 0  # Wall-clock execution time in milliseconds
 
 
 def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOUT_SECONDS) -> RunResult:
@@ -91,17 +94,21 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
             stderr='',
             exit_code=-1,
             timed_out=False,
+            elapsed_ms=0,
             error='Code exceeds maximum size limit'
         )
     
     # Use Docker sandbox if enabled and available
     if _check_sandbox_mode():
+        start_time = time.perf_counter()
         sandbox_result = run_in_sandbox(code, stdin_input, timeout=int(timeout))
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         return RunResult(
             stdout=sandbox_result.stdout,
             stderr=sandbox_result.stderr,
             exit_code=sandbox_result.exit_code,
             timed_out=sandbox_result.timed_out,
+            elapsed_ms=elapsed_ms,
             error=sandbox_result.error
         )
 
@@ -115,6 +122,7 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
             # Run Python in subprocess
             # Using -I flag for isolated mode (ignores PYTHON* env vars, no user site-packages)
             # Using -S flag to skip site.py (faster startup, fewer imports)
+            start_time = time.perf_counter()
             result = subprocess.run(
                 ['python3', '-I', str(code_path)],
                 input=stdin_input,
@@ -131,6 +139,7 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
                     'PYTHONDONTWRITEBYTECODE': '1',
                 }
             )
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             
             # Truncate output if too large
             stdout = result.stdout[:MAX_OUTPUT_BYTES]
@@ -145,15 +154,18 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
                 stdout=stdout,
                 stderr=stderr,
                 exit_code=result.returncode,
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=elapsed_ms
             )
             
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             return RunResult(
                 stdout='',
                 stderr='',
                 exit_code=-1,
-                timed_out=True
+                timed_out=True,
+                elapsed_ms=elapsed_ms
             )
         except Exception as e:
             return RunResult(
@@ -161,6 +173,7 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
                 stderr='',
                 exit_code=-1,
                 timed_out=False,
+                elapsed_ms=0,
                 error=f'Execution failed: {str(e)}'
             )
 
@@ -197,7 +210,8 @@ def run_function_call(
             error_type='internal',
             error_message='Code exceeds maximum size limit',
             traceback='',
-            timed_out=False
+            timed_out=False,
+            elapsed_ms=0
         )
     
     # Get harness code
@@ -205,9 +219,11 @@ def run_function_call(
     
     # Use Docker sandbox if enabled and available
     if _check_sandbox_mode():
+        start_time = time.perf_counter()
         sandbox_result = run_function_in_sandbox(
             code, harness_code, args_json, timeout=int(timeout)
         )
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         
         if sandbox_result.timed_out:
             return FunctionCallResult(
@@ -216,7 +232,8 @@ def run_function_call(
                 error_type='timeout',
                 error_message='Time limit exceeded',
                 traceback='',
-                timed_out=True
+                timed_out=True,
+                elapsed_ms=elapsed_ms
             )
         
         if sandbox_result.error:
@@ -226,7 +243,8 @@ def run_function_call(
                 error_type='internal',
                 error_message=sandbox_result.error,
                 traceback='',
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=elapsed_ms
             )
         
         # Parse JSON output from harness
@@ -238,7 +256,8 @@ def run_function_call(
                 error_type='internal',
                 error_message='Harness produced no output',
                 traceback=sandbox_result.stderr[:MAX_OUTPUT_BYTES],
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=elapsed_ms
             )
         
         try:
@@ -250,7 +269,8 @@ def run_function_call(
                 error_type='internal',
                 error_message=f'Harness output not valid JSON: {stdout[:200]}',
                 traceback=sandbox_result.stderr[:MAX_OUTPUT_BYTES],
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=elapsed_ms
             )
         
         if output.get('ok'):
@@ -260,7 +280,8 @@ def run_function_call(
                 error_type=None,
                 error_message='',
                 traceback='',
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=elapsed_ms
             )
         else:
             return FunctionCallResult(
@@ -269,7 +290,8 @@ def run_function_call(
                 error_type=output.get('error', 'unknown'),
                 error_message=output.get('message', 'Unknown error'),
                 traceback=output.get('traceback', ''),
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=elapsed_ms
             )
 
     # Fallback: run in subprocess (not sandboxed)
@@ -286,6 +308,7 @@ def run_function_call(
         (tmppath / 'input.json').write_text(args_json, encoding='utf-8')
         
         try:
+            start_time = time.perf_counter()
             result = subprocess.run(
                 ['python3', 'runner.py'],
                 capture_output=True,
@@ -301,6 +324,7 @@ def run_function_call(
                     'PYTHONPATH': tmpdir,
                 }
             )
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             
             # Parse the JSON output from the harness
             stdout = result.stdout.strip()
@@ -312,7 +336,8 @@ def run_function_call(
                     error_type='internal',
                     error_message='Harness produced no output',
                     traceback=result.stderr[:MAX_OUTPUT_BYTES],
-                    timed_out=False
+                    timed_out=False,
+                    elapsed_ms=elapsed_ms
                 )
             
             try:
@@ -324,7 +349,8 @@ def run_function_call(
                     error_type='internal',
                     error_message=f'Harness output not valid JSON: {stdout[:200]}',
                     traceback=result.stderr[:MAX_OUTPUT_BYTES],
-                    timed_out=False
+                    timed_out=False,
+                    elapsed_ms=elapsed_ms
                 )
             
             if output.get('ok'):
@@ -334,7 +360,8 @@ def run_function_call(
                     error_type=None,
                     error_message='',
                     traceback='',
-                    timed_out=False
+                    timed_out=False,
+                    elapsed_ms=elapsed_ms
                 )
             else:
                 return FunctionCallResult(
@@ -343,17 +370,20 @@ def run_function_call(
                     error_type=output.get('error', 'unknown'),
                     error_message=output.get('message', 'Unknown error'),
                     traceback=output.get('traceback', ''),
-                    timed_out=False
+                    timed_out=False,
+                    elapsed_ms=elapsed_ms
                 )
                 
         except subprocess.TimeoutExpired:
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             return FunctionCallResult(
                 success=False,
                 result=None,
                 error_type='timeout',
                 error_message='Time limit exceeded',
                 traceback='',
-                timed_out=True
+                timed_out=True,
+                elapsed_ms=elapsed_ms
             )
         except Exception as e:
             return FunctionCallResult(
@@ -362,5 +392,6 @@ def run_function_call(
                 error_type='internal',
                 error_message=f'Execution failed: {str(e)}',
                 traceback='',
-                timed_out=False
+                timed_out=False,
+                elapsed_ms=0
             )

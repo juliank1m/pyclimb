@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard | PyClimb{% endblock %}
+
+{% block extra_styles %}
+header.page-header {
+  padding: 24px 0 12px;
+  text-align: center;
+}
+header.page-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  letter-spacing: 0.02em;
+}
+header.page-header p.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.leaderboard-container {
+  max-width: 800px;
+  margin: 32px auto;
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid #efe7d7;
+  box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+  overflow: hidden;
+}
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #efe7d7;
+}
+.leaderboard-table th {
+  background: var(--bg);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.leaderboard-table tr:last-child td {
+  border-bottom: none;
+}
+.leaderboard-table tr:hover {
+  background: var(--bg);
+}
+.rank-cell {
+  width: 60px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.rank-1 { color: #ffd700; }
+.rank-2 { color: #c0c0c0; }
+.rank-3 { color: #cd7f32; }
+.username-cell {
+  font-weight: 600;
+}
+.difficulty-breakdown {
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+.diff-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.diff-badge.easy {
+  background: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+}
+.diff-badge.medium {
+  background: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+}
+.diff-badge.hard {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+}
+.score-cell {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--accent);
+  text-align: right;
+}
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-state p {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+.empty-state a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.empty-state a:hover {
+  text-decoration: underline;
+}
+.scoring-note {
+  max-width: 800px;
+  margin: 16px auto;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: center;
+}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>Leaderboard</h1>
+  <p class="subtitle">Top problem solvers on PyClimb</p>
+</header>
+
+<p class="scoring-note">
+  Score = Easy (1pt) + Medium (2pts) + Hard (3pts)
+</p>
+
+<div class="leaderboard-container">
+  {% if leaderboard %}
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th style="text-align: center;">Rank</th>
+          <th>Username</th>
+          <th>Solved</th>
+          <th>Breakdown</th>
+          <th style="text-align: right;">Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in leaderboard %}
+          <tr>
+            <td class="rank-cell {% if entry.rank == 1 %}rank-1{% elif entry.rank == 2 %}rank-2{% elif entry.rank == 3 %}rank-3{% endif %}">
+              {% if entry.rank == 1 %}
+                <span title="1st Place">🥇</span>
+              {% elif entry.rank == 2 %}
+                <span title="2nd Place">🥈</span>
+              {% elif entry.rank == 3 %}
+                <span title="3rd Place">🥉</span>
+              {% else %}
+                {{ entry.rank }}
+              {% endif %}
+            </td>
+            <td class="username-cell">{{ entry.username }}</td>
+            <td>{{ entry.problems_solved }}</td>
+            <td>
+              <div class="difficulty-breakdown">
+                <span class="diff-badge easy">{{ entry.easy_count }} Easy</span>
+                <span class="diff-badge medium">{{ entry.medium_count }} Med</span>
+                <span class="diff-badge hard">{{ entry.hard_count }} Hard</span>
+              </div>
+            </td>
+            <td class="score-cell">{{ entry.score }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <p>No one has solved any problems yet.</p>
+      <a href="{% url 'problems:index' %}">Be the first to solve one!</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

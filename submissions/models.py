@@ -70,11 +70,18 @@ class Submission(models.Model):
     )
 
     # Per-test-case results (JSON array)
-    # Each entry: {test_id, is_sample, passed, verdict, stdout, stderr, expected, input_display}
+    # Each entry: {test_id, is_sample, passed, verdict, stdout, stderr, expected, input_display, elapsed_ms}
     test_results = models.JSONField(
         default=list,
         blank=True,
         help_text="Detailed results for each test case"
+    )
+
+    # Total execution time across all test cases (milliseconds)
+    execution_time_ms = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Total wall-clock execution time in milliseconds"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

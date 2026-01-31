@@ -194,6 +194,26 @@ header.problem-header h1 {
   background: #f0f0f0;
   color: var(--muted);
 }
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.tag {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.tag:hover {
+  background: var(--accent);
+  color: white;
+}
 {% endblock %}
 
 {% block content %}
@@ -203,6 +223,13 @@ header.problem-header h1 {
   <span class="difficulty">{{ problem.get_difficulty_display }}</span>
   <h1>{{ problem.title }}</h1>
   <p class="muted">Updated {{ problem.updated_at|date:"M j, Y" }}</p>
+  {% if problem.tags.all %}
+    <div class="tag-list">
+      {% for tag in problem.tags.all %}
+        <a href="{% url 'problems:index' %}?tag={{ tag.slug }}" class="tag">{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
 </header>
 
 <section class="section">
