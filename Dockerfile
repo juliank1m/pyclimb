@@ -28,5 +28,5 @@ RUN SECRET_KEY=build-only-key DEBUG=false python manage.py collectstatic --noinp
 # Note: Migrations run via Procfile release command, NOT during build
 # The database isn't available at build time
 
-# Run gunicorn (Railway overrides PORT via environment variable)
-CMD gunicorn pyclimb.wsgi:application --bind 0.0.0.0:$PORT
+# Run gunicorn (Railway provides PORT via environment variable)
+CMD ["sh", "-c", "gunicorn pyclimb.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
