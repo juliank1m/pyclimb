@@ -2,6 +2,12 @@
 
 {% block title %}{{ form_title }} | PyClimb{% endblock %}
 
+{% block extra_head %}
+<!-- EasyMDE Markdown Editor -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+{% endblock %}
+
 {% block extra_styles %}
 .form-header {
   display: flex;
@@ -85,13 +91,6 @@
   width: 100px;
 }
 
-.markdown-editor {
-  font-family: "SF Mono", "Menlo", "Monaco", monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  min-height: 400px;
-}
-
 .form-checkbox-wrapper {
   display: flex;
   align-items: center;
@@ -173,31 +172,24 @@ a.back {
   margin-bottom: 16px;
 }
 
-.markdown-help {
+.editor-tips {
   font-size: 0.85rem;
   color: var(--muted);
   line-height: 1.6;
 }
 
-.markdown-help h4 {
+.editor-tips h4 {
   margin: 0 0 8px;
   font-size: 0.9rem;
   color: var(--ink);
 }
 
-.markdown-help code {
-  background: var(--bg);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 0.8rem;
-}
-
-.markdown-help ul {
+.editor-tips ul {
   margin: 8px 0;
   padding-left: 16px;
 }
 
-.markdown-help li {
+.editor-tips li {
   margin-bottom: 4px;
 }
 
@@ -211,6 +203,171 @@ a.back {
 
 .preview-link:hover {
   text-decoration: underline;
+}
+
+/* EasyMDE Customization */
+.EasyMDEContainer {
+  font-family: inherit;
+}
+
+.EasyMDEContainer .CodeMirror {
+  border-radius: 0 0 8px 8px;
+  border-color: #ddd;
+  font-family: "SF Mono", "Menlo", "Monaco", monospace;
+  font-size: 14px;
+  min-height: 400px;
+}
+
+.EasyMDEContainer .CodeMirror-focused {
+  border-color: var(--accent);
+}
+
+.EasyMDEContainer .editor-toolbar {
+  border-color: #ddd;
+  border-radius: 8px 8px 0 0;
+  background: var(--bg);
+}
+
+.EasyMDEContainer .editor-toolbar button {
+  color: var(--ink);
+}
+
+.EasyMDEContainer .editor-toolbar button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.EasyMDEContainer .editor-toolbar button.active {
+  background: var(--accent);
+  color: white;
+}
+
+.EasyMDEContainer .editor-toolbar i.separator {
+  border-left-color: #ddd;
+}
+
+.EasyMDEContainer .editor-preview {
+  background: var(--card);
+  font-family: "Garamond", "Times New Roman", serif;
+  padding: 20px;
+}
+
+.EasyMDEContainer .editor-preview pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.EasyMDEContainer .editor-preview code {
+  background: #f4f1ea;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "SF Mono", "Menlo", monospace;
+}
+
+.EasyMDEContainer .editor-preview pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.EasyMDEContainer .editor-statusbar {
+  border-color: #ddd;
+  color: var(--muted);
+}
+
+/* Image upload modal */
+.image-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-modal-overlay.active {
+  display: flex;
+}
+
+.image-modal {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.image-modal h3 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+}
+
+.image-modal-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.image-modal-tab {
+  padding: 8px 16px;
+  border: none;
+  background: var(--bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.image-modal-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+.image-modal-content > div {
+  display: none;
+}
+
+.image-modal-content > div.active {
+  display: block;
+}
+
+.image-modal input[type="text"],
+.image-modal input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.image-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.upload-progress {
+  display: none;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.upload-progress.active {
+  display: block;
 }
 {% endblock %}
 
@@ -229,7 +386,7 @@ a.back {
   {% endif %}
 </header>
 
-<form method="post">
+<form method="post" id="lesson-form" enctype="multipart/form-data">
   {% csrf_token %}
   
   <div class="form-layout">
@@ -253,8 +410,8 @@ a.back {
         </div>
         
         <div class="form-group">
-          <label for="id_content_markdown">Content (Markdown)</label>
-          {{ form.content_markdown }}
+          <label for="id_content_markdown">Content</label>
+          <textarea id="id_content_markdown" name="content_markdown" class="markdown-editor">{{ form.content_markdown.value|default:'' }}</textarea>
           {% if form.content_markdown.errors %}
             <ul class="error-list">{% for error in form.content_markdown.errors %}<li>{{ error }}</li>{% endfor %}</ul>
           {% endif %}
@@ -316,28 +473,249 @@ a.back {
       </div>
       
       <div class="form-card" style="margin-top: 16px;">
-        <div class="markdown-help">
-          <h4>Markdown Cheatsheet</h4>
+        <div class="editor-tips">
+          <h4>Editor Tips</h4>
           <ul>
-            <li><code># Heading 1</code></li>
-            <li><code>## Heading 2</code></li>
-            <li><code>**bold**</code> / <code>*italic*</code></li>
-            <li><code>`inline code`</code></li>
-            <li><code>```python</code> for code blocks</li>
-            <li><code>- item</code> for bullet lists</li>
-            <li><code>1. item</code> for numbered lists</li>
-            <li><code>[text](url)</code> for links</li>
-            <li><code>> quote</code> for blockquotes</li>
+            <li>Use the <strong>toolbar</strong> for quick formatting</li>
+            <li>Click <strong>Preview</strong> (eye icon) to see rendered output</li>
+            <li>Click <strong>Side-by-side</strong> for live preview</li>
+            <li><strong>Fullscreen</strong> mode for distraction-free writing</li>
+            <li><strong>Drag & drop</strong> images directly into the editor</li>
           </ul>
         </div>
         
         {% if lesson %}
           <a href="{% url 'lessons:lesson_preview' lesson.slug %}" class="preview-link" target="_blank">
-            Open preview in new tab →
+            Open full preview in new tab →
           </a>
         {% endif %}
       </div>
     </div>
   </div>
 </form>
+
+<!-- Image Upload Modal -->
+<div class="image-modal-overlay" id="imageModal">
+  <div class="image-modal">
+    <h3>Insert Image</h3>
+    
+    <div class="image-modal-tabs">
+      <button type="button" class="image-modal-tab active" data-tab="url">From URL</button>
+      <button type="button" class="image-modal-tab" data-tab="upload">Upload File</button>
+    </div>
+    
+    <div class="image-modal-content">
+      <div id="tab-url" class="active">
+        <input type="text" id="image-url" placeholder="https://example.com/image.png">
+        <input type="text" id="image-alt" placeholder="Image description (alt text)">
+      </div>
+      <div id="tab-upload">
+        <input type="file" id="image-file" accept="image/*">
+        <input type="text" id="image-alt-upload" placeholder="Image description (alt text)">
+        <div class="upload-progress" id="uploadProgress">Uploading...</div>
+      </div>
+    </div>
+    
+    <div class="image-modal-actions">
+      <button type="button" class="btn-cancel" id="cancelImage">Cancel</button>
+      <button type="button" class="btn" id="insertImage">Insert Image</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const csrfToken = '{{ csrf_token }}';
+  
+  // Initialize EasyMDE
+  const easyMDE = new EasyMDE({
+    element: document.getElementById('id_content_markdown'),
+    spellChecker: false,
+    autosave: {
+      enabled: true,
+      uniqueId: 'lesson-{{ lesson.pk|default:"new" }}',
+      delay: 5000,
+    },
+    placeholder: "Start writing your lesson content here...\n\nUse the toolbar above for formatting, or write in Markdown.",
+    toolbar: [
+      'bold', 'italic', 'heading', '|',
+      'quote', 'unordered-list', 'ordered-list', '|',
+      'link', 
+      {
+        name: 'image',
+        action: function(editor) {
+          showImageModal(editor);
+        },
+        className: 'fa fa-image',
+        title: 'Insert Image',
+      },
+      '|',
+      'code', 
+      {
+        name: 'code-block',
+        action: function(editor) {
+          insertCodeBlock(editor);
+        },
+        className: 'fa fa-file-code',
+        title: 'Insert Code Block',
+      },
+      '|',
+      'preview', 'side-by-side', 'fullscreen', '|',
+      'guide'
+    ],
+    sideBySideFullscreen: false,
+    status: ['autosave', 'lines', 'words'],
+    renderingConfig: {
+      codeSyntaxHighlighting: true,
+    },
+  });
+  
+  // Store editor reference globally for image modal
+  window.currentEditor = easyMDE;
+  
+  // Code block insertion with language selection
+  function insertCodeBlock(editor) {
+    const languages = ['python', 'javascript', 'html', 'css', 'sql', 'bash', 'json'];
+    const lang = prompt('Enter programming language:\n\nCommon options: ' + languages.join(', '), 'python');
+    
+    if (lang !== null) {
+      const cm = editor.codemirror;
+      const selectedText = cm.getSelection();
+      const codeBlock = '```' + lang + '\n' + (selectedText || '# Your code here\n') + '\n```';
+      cm.replaceSelection(codeBlock);
+    }
+  }
+  
+  // Image modal functionality
+  const imageModal = document.getElementById('imageModal');
+  const tabs = document.querySelectorAll('.image-modal-tab');
+  const tabContents = document.querySelectorAll('.image-modal-content > div');
+  
+  function showImageModal(editor) {
+    window.currentEditor = editor;
+    imageModal.classList.add('active');
+    document.getElementById('image-url').value = '';
+    document.getElementById('image-alt').value = '';
+    document.getElementById('image-file').value = '';
+    document.getElementById('image-alt-upload').value = '';
+  }
+  
+  function hideImageModal() {
+    imageModal.classList.remove('active');
+  }
+  
+  // Tab switching
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const tabId = this.dataset.tab;
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      
+      this.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    });
+  });
+  
+  // Cancel button
+  document.getElementById('cancelImage').addEventListener('click', hideImageModal);
+  
+  // Click outside to close
+  imageModal.addEventListener('click', function(e) {
+    if (e.target === imageModal) {
+      hideImageModal();
+    }
+  });
+  
+  // Insert image button
+  document.getElementById('insertImage').addEventListener('click', function() {
+    const activeTab = document.querySelector('.image-modal-tab.active').dataset.tab;
+    
+    if (activeTab === 'url') {
+      const url = document.getElementById('image-url').value.trim();
+      const alt = document.getElementById('image-alt').value.trim() || 'Image';
+      
+      if (url) {
+        insertImageMarkdown(url, alt);
+        hideImageModal();
+      } else {
+        alert('Please enter an image URL');
+      }
+    } else {
+      // File upload
+      const fileInput = document.getElementById('image-file');
+      const alt = document.getElementById('image-alt-upload').value.trim() || 'Image';
+      
+      if (fileInput.files.length > 0) {
+        uploadImage(fileInput.files[0], alt);
+      } else {
+        alert('Please select an image file');
+      }
+    }
+  });
+  
+  function insertImageMarkdown(url, alt) {
+    const cm = window.currentEditor.codemirror;
+    const markdown = '![' + alt + '](' + url + ')';
+    cm.replaceSelection(markdown);
+  }
+  
+  function uploadImage(file, alt) {
+    const progress = document.getElementById('uploadProgress');
+    progress.classList.add('active');
+    progress.textContent = 'Uploading...';
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    
+    fetch('{% url "lessons:image_upload" %}', {
+      method: 'POST',
+      body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+      progress.classList.remove('active');
+      
+      if (data.url) {
+        insertImageMarkdown(data.url, alt);
+        hideImageModal();
+      } else {
+        alert(data.error || 'Upload failed');
+      }
+    })
+    .catch(error => {
+      progress.classList.remove('active');
+      alert('Upload failed: ' + error.message);
+    });
+  }
+  
+  // Drag and drop image support
+  const editorElement = document.querySelector('.EasyMDEContainer');
+  if (editorElement) {
+    editorElement.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.border = '2px dashed var(--accent)';
+    });
+    
+    editorElement.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.border = '';
+    });
+    
+    editorElement.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.border = '';
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type.startsWith('image/')) {
+        uploadImage(files[0], 'Uploaded image');
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

@@ -334,3 +334,49 @@ def markdown_preview_api(request):
     content = request.POST.get('content', '')
     html = render_markdown(content)
     return JsonResponse({'html': html})
+
+
+@staff_member_required
+def image_upload(request):
+    """Handle image uploads for lesson content."""
+    import os
+    import uuid
+    from django.conf import settings
+    from django.core.files.storage import default_storage
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    
+    if 'image' not in request.FILES:
+        return JsonResponse({'error': 'No image provided'}, status=400)
+    
+    image = request.FILES['image']
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if image.content_type not in allowed_types:
+        return JsonResponse({
+            'error': f'Invalid file type. Allowed: JPEG, PNG, GIF, WebP'
+        }, status=400)
+    
+    # Validate file size (max 5MB)
+    max_size = 5 * 1024 * 1024
+    if image.size > max_size:
+        return JsonResponse({
+            'error': 'Image too large. Maximum size is 5MB.'
+        }, status=400)
+    
+    # Generate unique filename
+    ext = os.path.splitext(image.name)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+        ext = '.png'
+    filename = f"lessons/{uuid.uuid4().hex}{ext}"
+    
+    # Save file
+    path = default_storage.save(filename, image)
+    url = default_storage.url(path)
+    
+    return JsonResponse({
+        'url': url,
+        'filename': os.path.basename(path)
+    })

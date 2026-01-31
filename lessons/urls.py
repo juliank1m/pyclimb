@@ -19,6 +19,7 @@ urlpatterns = [
     path('teach/lesson/<slug:lesson_slug>/preview/', views.LessonPreviewView.as_view(), name='lesson_preview'),
     path('teach/lesson/<slug:lesson_slug>/toggle-publish/', views.lesson_toggle_publish, name='lesson_toggle_publish'),
     path('teach/api/markdown-preview/', views.markdown_preview_api, name='markdown_preview_api'),
+    path('teach/api/image-upload/', views.image_upload, name='image_upload'),
     
     # Public course/lesson routes (must be after teach/ routes)
     path('<slug:course_slug>/', views.CourseDetailView.as_view(), name='course_detail'),
