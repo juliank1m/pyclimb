@@ -15,7 +15,10 @@ untrusted public internet use. See SECURITY.md for production requirements.
 """
 
 import json
+import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from dataclasses import dataclass
@@ -39,6 +42,20 @@ MAX_CODE_BYTES = 50000    # 50KB max code
 
 # Cache Docker availability check
 _docker_available = None
+
+
+def _get_python_bin() -> str:
+    env_bin = os.environ.get('PYCLIMB_PYTHON_BIN')
+    if env_bin:
+        return env_bin
+    if sys.executable:
+        return sys.executable
+    for candidate in ('python3', 'python'):
+        found = shutil.which(candidate)
+        if found:
+            return found
+    return 'python3'
+
 
 def _check_sandbox_mode() -> bool:
     """Check if sandbox mode should be used."""
@@ -124,7 +141,7 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
             # Using -S flag to skip site.py (faster startup, fewer imports)
             start_time = time.perf_counter()
             result = subprocess.run(
-                ['python3', '-I', str(code_path)],
+                [_get_python_bin(), '-I', str(code_path)],
                 input=stdin_input,
                 capture_output=True,
                 text=True,
@@ -310,7 +327,7 @@ def run_function_call(
         try:
             start_time = time.perf_counter()
             result = subprocess.run(
-                ['python3', 'runner.py'],
+                [_get_python_bin(), 'runner.py'],
                 capture_output=True,
                 text=True,
                 timeout=timeout,

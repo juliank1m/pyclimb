@@ -92,6 +92,7 @@ def run_in_sandbox(
     Returns:
         SandboxResult with stdout, stderr, exit code, and timeout flag
     """
+    python_bin = os.environ.get('PYCLIMB_PYTHON_BIN', 'python3')
     config = get_sandbox_config()
     if timeout is None:
         timeout = config['timeout']
@@ -123,7 +124,7 @@ def run_in_sandbox(
             '-v', f'{code_path}:/sandbox/code.py:ro',      # Mount code read-only
             '-v', f'{input_path}:/sandbox/input.txt:ro',   # Mount input read-only
             config['image'],
-            'sh', '-c', f'timeout {timeout} python3 /sandbox/code.py < /sandbox/input.txt'
+            'sh', '-c', f'timeout {timeout} {python_bin} /sandbox/code.py < /sandbox/input.txt'
         ]
         
         try:
@@ -189,6 +190,7 @@ def run_function_in_sandbox(
     Returns:
         SandboxResult with JSON output from the harness
     """
+    python_bin = os.environ.get('PYCLIMB_PYTHON_BIN', 'python3')
     config = get_sandbox_config()
     if timeout is None:
         timeout = config['timeout']
@@ -217,7 +219,7 @@ def run_function_in_sandbox(
             '-w', '/sandbox',
             '-e', 'PYTHONPATH=/sandbox',
             config['image'],
-            'sh', '-c', f'timeout {timeout} python3 /sandbox/runner.py'
+            'sh', '-c', f'timeout {timeout} {python_bin} /sandbox/runner.py'
         ]
         
         try:
