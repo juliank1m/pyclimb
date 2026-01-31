@@ -1,6 +1,6 @@
 # PyClimb
 
-> A Python practice platform for writing, browsing, and eventually solving coding problems.
+> A Python practice platform for writing, browsing, and solving coding problems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Django](https://img.shields.io/badge/Django-6.0.1-0C4B33.svg)](https://www.djangoproject.com/)
@@ -15,6 +15,7 @@ The goal of the project is to understand how a real production-style web app is 
 
 ## Table of Contents
 - [Current Features](#current-features)
+- [Security Notice](#security-notice)
 - [Why This Project Exists](#why-this-project-exists)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure-simplified)
@@ -29,25 +30,46 @@ The goal of the project is to understand how a real production-style web app is 
 
 At its current stage, PyClimb supports:
 
-- PostgreSQL-backed Django project
-- Dockerized PostgreSQL database
-- `Problem` model with:
-  - title, description, constraints, follow-up
-  - difficulty levels
-  - published/unpublished state
-- `TestCase` model with:
-  - machine-readable inputs & expected outputs
-  - human-readable display inputs/outputs
-  - optional explanations
-  - sample vs hidden test cases
-- Django Admin UI:
-  - create and manage problems
-  - inline test case editing
-  - filtering, searching, and publishing control
-- Public problem list page
-- Problem detail pages using class-based views
+### Problem Management
+- `Problem` model with title, description, constraints, follow-up, difficulty, and publish state
+- `TestCase` model with machine-readable inputs/outputs and human-readable display versions
+- Sample vs hidden test cases
+- Django Admin UI with inline test case editing
 
-This stage primarily focuses on **content management and data modeling**, ensuring problems and test cases are structured correctly before introducing execution or submissions.
+### Submission System
+- `Submission` model tracking code, status, verdict, and per-test-case results
+- **Code execution** via subprocess with safety guardrails
+- **Verdicts:** Accepted, Wrong Answer, Runtime Error, Time Limit Exceeded, Compilation Error
+- **Detailed feedback** showing expected vs actual output for sample tests
+- stdin/stdout execution model (not function-call style)
+
+### User Interface
+- Problem list and detail pages
+- Submission form with format guidance and code template
+- Submission result page with test case breakdown
+
+### Infrastructure
+- PostgreSQL-backed Django project (database in Docker)
+- Slug-based URLs for problems
+
+---
+
+## Security Notice
+
+⚠️ **The current code execution system is for local development only.**
+
+The judge runs user-submitted Python code with basic safeguards (subprocess isolation, timeouts, output limits), but **lacks full sandboxing**. A malicious user could:
+- Read files from the host system
+- Make network connections
+- Exhaust system resources
+
+**Do not deploy to the public internet without implementing container isolation.**
+
+See **[SECURITY.md](SECURITY.md)** for:
+- Current safeguards and their limitations
+- Known attack vectors
+- Production deployment requirements
+- Implementation roadmap
 
 ---
 
@@ -77,18 +99,24 @@ Rather than copying LeetCode’s UI or features directly, PyClimb prioritizes **
 ## Project Structure (Simplified)
 ```
 pyclimb/
-├── problems/
-│ ├── migrations/
-│ ├── models.py
-│ ├── views.py
-│ ├── admin.py
-│ └── urls.py
-├── pyclimb/
-│ ├── settings.py
-│ ├── urls.py
-│ └── wsgi.py
+├── problems/              # Problem browsing app
+│   ├── models.py          # Problem, TestCase
+│   ├── views.py           # List and detail views
+│   ├── admin.py           # Admin configuration
+│   └── templates/
+├── submissions/           # Code submission app
+│   ├── models.py          # Submission
+│   ├── views.py           # Create and detail views
+│   ├── services/          # Judge logic
+│   │   ├── judge.py       # Main judge orchestration
+│   │   ├── runner.py      # Subprocess execution
+│   │   └── normalize.py   # Output comparison
+│   └── templates/
+├── pyclimb/               # Project settings
+│   ├── settings.py
+│   └── urls.py
 ├── manage.py
-├── .env
+├── SECURITY.md            # Security documentation
 └── README.md
 ```
 
@@ -119,16 +147,24 @@ Detailed step-by-step setup may be added as the project stabilizes.
 
 ## Planned Next Steps
 
-Short-term roadmap (not yet implemented):
+### Recently Completed
+- ✅ Problem submission interface
+- ✅ Code execution via subprocess
+- ✅ Test case evaluation engine
+- ✅ Submission results with detailed feedback
 
-- User authentication
-- Problem submission interface
-- Safe execution environment for Python code
-- Test case evaluation engine
-- Submission results & feedback
-- Basic progress tracking
+### Next Up
+- [ ] User authentication
+- [ ] Submission history per user
+- [ ] Saved code drafts
+- [ ] Container-based sandboxing for production safety
+- [ ] Basic progress tracking
 
-These features are intentionally deferred until the **data model and admin workflows feel solid**.
+### Future
+- [ ] Rate limiting
+- [ ] Async execution queue (Celery)
+- [ ] Multiple test case formats
+- [ ] Performance metrics (execution time, memory)
 
 ---
 
