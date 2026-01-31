@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'problems.apps.ProblemsConfig',
     'submissions.apps.SubmissionsConfig',
+    'lessons.apps.LessonsConfig',
 ]
 
 MIDDLEWARE = [
