@@ -412,3 +412,278 @@ class LessonProblemLinkTests(TestCase):
         lesson.problems.add(problem)
         
         assert lesson in problem.lessons.all()
+
+
+# =============================================================================
+# Teacher Dashboard Tests
+# =============================================================================
+
+class TeachDashboardViewTests(TestCase):
+    """Tests for the teacher dashboard."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.staff_user = User.objects.create_user(
+            username='teacher',
+            password='testpass',
+            is_staff=True
+        )
+        self.regular_user = User.objects.create_user(
+            username='student',
+            password='testpass',
+            is_staff=False
+        )
+    
+    def test_dashboard_requires_staff(self):
+        """Non-staff users are redirected to login."""
+        response = self.client.get(reverse('lessons:teach_dashboard'))
+        assert response.status_code == 302
+        assert '/admin/login/' in response.url
+    
+    def test_dashboard_accessible_to_staff(self):
+        """Staff users can access the dashboard."""
+        self.client.login(username='teacher', password='testpass')
+        response = self.client.get(reverse('lessons:teach_dashboard'))
+        assert response.status_code == 200
+        assert 'Teacher Dashboard' in response.content.decode()
+    
+    def test_dashboard_shows_courses(self):
+        """Dashboard displays all courses."""
+        self.client.login(username='teacher', password='testpass')
+        Course.objects.create(title="Test Course", is_published=True)
+        
+        response = self.client.get(reverse('lessons:teach_dashboard'))
+        
+        assert response.status_code == 200
+        assert 'Test Course' in response.content.decode()
+
+
+class CourseCreateViewTests(TestCase):
+    """Tests for creating courses."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.staff_user = User.objects.create_user(
+            username='teacher',
+            password='testpass',
+            is_staff=True
+        )
+    
+    def test_create_course_requires_staff(self):
+        """Non-staff cannot access course creation."""
+        response = self.client.get(reverse('lessons:course_create'))
+        assert response.status_code == 302
+    
+    def test_create_course_form_renders(self):
+        """Course creation form renders for staff."""
+        self.client.login(username='teacher', password='testpass')
+        response = self.client.get(reverse('lessons:course_create'))
+        
+        assert response.status_code == 200
+        assert 'Create New Course' in response.content.decode()
+    
+    def test_create_course_success(self):
+        """Staff can create a new course."""
+        self.client.login(username='teacher', password='testpass')
+        
+        response = self.client.post(reverse('lessons:course_create'), {
+            'title': 'New Course',
+            'description': 'A test course',
+            'order': 0,
+        })
+        
+        assert response.status_code == 302  # Redirect on success
+        assert Course.objects.filter(title='New Course').exists()
+
+
+class LessonCreateViewTests(TestCase):
+    """Tests for creating lessons."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.staff_user = User.objects.create_user(
+            username='teacher',
+            password='testpass',
+            is_staff=True
+        )
+        self.course = Course.objects.create(title="Test Course")
+    
+    def test_create_lesson_requires_staff(self):
+        """Non-staff cannot access lesson creation."""
+        response = self.client.get(reverse('lessons:lesson_create'))
+        assert response.status_code == 302
+    
+    def test_create_lesson_form_renders(self):
+        """Lesson creation form renders for staff."""
+        self.client.login(username='teacher', password='testpass')
+        response = self.client.get(reverse('lessons:lesson_create'))
+        
+        assert response.status_code == 200
+        assert 'Create New Lesson' in response.content.decode()
+    
+    def test_create_lesson_success(self):
+        """Staff can create a new lesson."""
+        self.client.login(username='teacher', password='testpass')
+        
+        response = self.client.post(reverse('lessons:lesson_create'), {
+            'title': 'New Lesson',
+            'content_markdown': '# Hello\n\nThis is a test lesson.',
+            'order': 0,
+            'course': self.course.pk,
+        })
+        
+        assert response.status_code == 302  # Redirect on success
+        assert Lesson.objects.filter(title='New Lesson').exists()
+    
+    def test_create_lesson_preselects_course(self):
+        """Course is preselected when provided in URL."""
+        self.client.login(username='teacher', password='testpass')
+        
+        response = self.client.get(
+            reverse('lessons:lesson_create') + f'?course={self.course.slug}'
+        )
+        
+        assert response.status_code == 200
+
+
+class LessonEditViewTests(TestCase):
+    """Tests for editing lessons."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.staff_user = User.objects.create_user(
+            username='teacher',
+            password='testpass',
+            is_staff=True
+        )
+        self.lesson = Lesson.objects.create(
+            title="Test Lesson",
+            slug="test-lesson",
+            content_markdown="Original content"
+        )
+    
+    def test_edit_lesson_requires_staff(self):
+        """Non-staff cannot edit lessons."""
+        response = self.client.get(
+            reverse('lessons:lesson_edit', args=['test-lesson'])
+        )
+        assert response.status_code == 302
+    
+    def test_edit_lesson_form_renders(self):
+        """Lesson edit form renders with existing content."""
+        self.client.login(username='teacher', password='testpass')
+        response = self.client.get(
+            reverse('lessons:lesson_edit', args=['test-lesson'])
+        )
+        
+        assert response.status_code == 200
+        assert 'Edit Lesson' in response.content.decode()
+        assert 'Original content' in response.content.decode()
+    
+    def test_edit_lesson_success(self):
+        """Staff can update a lesson."""
+        self.client.login(username='teacher', password='testpass')
+        
+        response = self.client.post(
+            reverse('lessons:lesson_edit', args=['test-lesson']),
+            {
+                'title': 'Updated Title',
+                'slug': 'test-lesson',
+                'content_markdown': 'Updated content',
+                'order': 0,
+            }
+        )
+        
+        assert response.status_code == 302  # Redirect on success
+        self.lesson.refresh_from_db()
+        assert self.lesson.title == 'Updated Title'
+        assert self.lesson.content_markdown == 'Updated content'
+
+
+class LessonTogglePublishTests(TestCase):
+    """Tests for toggling lesson publish status."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.staff_user = User.objects.create_user(
+            username='teacher',
+            password='testpass',
+            is_staff=True
+        )
+        self.lesson = Lesson.objects.create(
+            title="Test Lesson",
+            slug="test-lesson",
+            content_markdown="Content",
+            is_published=False
+        )
+    
+    def test_toggle_requires_staff(self):
+        """Non-staff cannot toggle publish status."""
+        response = self.client.post(
+            reverse('lessons:lesson_toggle_publish', args=['test-lesson'])
+        )
+        assert response.status_code == 302
+        assert '/admin/login/' in response.url
+    
+    def test_toggle_publish(self):
+        """Staff can toggle lesson from draft to published."""
+        self.client.login(username='teacher', password='testpass')
+        
+        assert self.lesson.is_published is False
+        
+        response = self.client.post(
+            reverse('lessons:lesson_toggle_publish', args=['test-lesson'])
+        )
+        
+        assert response.status_code == 302  # Redirect
+        self.lesson.refresh_from_db()
+        assert self.lesson.is_published is True
+    
+    def test_toggle_unpublish(self):
+        """Staff can toggle lesson from published to draft."""
+        self.client.login(username='teacher', password='testpass')
+        self.lesson.is_published = True
+        self.lesson.save()
+        
+        response = self.client.post(
+            reverse('lessons:lesson_toggle_publish', args=['test-lesson'])
+        )
+        
+        self.lesson.refresh_from_db()
+        assert self.lesson.is_published is False
+
+
+class LessonPreviewViewTests(TestCase):
+    """Tests for lesson preview."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.staff_user = User.objects.create_user(
+            username='teacher',
+            password='testpass',
+            is_staff=True
+        )
+        self.lesson = Lesson.objects.create(
+            title="Test Lesson",
+            slug="test-lesson",
+            content_markdown="# Hello\n\nThis is **bold** text."
+        )
+    
+    def test_preview_requires_staff(self):
+        """Non-staff cannot access preview."""
+        response = self.client.get(
+            reverse('lessons:lesson_preview', args=['test-lesson'])
+        )
+        assert response.status_code == 302
+    
+    def test_preview_renders_markdown(self):
+        """Preview renders markdown to HTML."""
+        self.client.login(username='teacher', password='testpass')
+        response = self.client.get(
+            reverse('lessons:lesson_preview', args=['test-lesson'])
+        )
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert 'Preview Mode' in content
+        assert '<strong>bold</strong>' in content or '<b>bold</b>' in content.lower()

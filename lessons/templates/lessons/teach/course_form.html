@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ form_title }} | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.form-header {
+  margin-bottom: 24px;
+}
+
+.form-header h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.form-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.form-card {
+  background: var(--card);
+  border: 1px solid #efe7d7;
+  border-radius: 14px;
+  padding: 24px 28px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.form-group .help-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.form-input-small {
+  width: 100px;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.form-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #efe7d7;
+}
+
+.btn-cancel {
+  padding: 12px 24px;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.btn-cancel:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.error-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+
+a.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'lessons:teach_dashboard' %}">← Back to Dashboard</a>
+
+<header class="form-header">
+  <h1>{{ form_title }}</h1>
+  {% if course %}
+    <p>Editing course created {{ course.created_at|date:"M j, Y" }}</p>
+  {% endif %}
+</header>
+
+<div class="form-card">
+  <form method="post">
+    {% csrf_token %}
+    
+    <div class="form-group">
+      <label for="id_title">Title</label>
+      {{ form.title }}
+      {% if form.title.errors %}
+        <ul class="error-list">{% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <span class="help-text">{{ form.title.help_text }}</span>
+    </div>
+    
+    <div class="form-group">
+      <label for="id_slug">Slug</label>
+      {{ form.slug }}
+      {% if form.slug.errors %}
+        <ul class="error-list">{% for error in form.slug.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <span class="help-text">{{ form.slug.help_text }}</span>
+    </div>
+    
+    <div class="form-group">
+      <label for="id_description">Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}
+        <ul class="error-list">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <span class="help-text">{{ form.description.help_text }}</span>
+    </div>
+    
+    <div class="form-group">
+      <label for="id_order">Display Order</label>
+      {{ form.order }}
+      {% if form.order.errors %}
+        <ul class="error-list">{% for error in form.order.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <span class="help-text">{{ form.order.help_text }}</span>
+    </div>
+    
+    <div class="form-group">
+      <div class="form-checkbox-wrapper">
+        {{ form.is_published }}
+        <label for="id_is_published">Published</label>
+      </div>
+      <span class="help-text">{{ form.is_published.help_text }}</span>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn">{{ submit_text }}</button>
+      <a href="{% url 'lessons:teach_dashboard' %}" class="btn-cancel">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

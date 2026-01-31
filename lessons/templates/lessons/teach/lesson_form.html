@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ form_title }} | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.form-header h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.form-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.form-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 1100px) {
+  .form-layout {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+.form-card {
+  background: var(--card);
+  border: 1px solid #efe7d7;
+  border-radius: 14px;
+  padding: 24px 28px;
+}
+
+.form-sidebar .form-card {
+  position: sticky;
+  top: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.form-group .help-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.form-input-small {
+  width: 100px;
+}
+
+.markdown-editor {
+  font-family: "SF Mono", "Menlo", "Monaco", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 400px;
+}
+
+.form-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.form-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+.form-checkbox-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.form-checkbox-list input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #efe7d7;
+}
+
+.btn-cancel {
+  padding: 12px 24px;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.btn-cancel:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.error-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+
+a.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.markdown-help {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.markdown-help h4 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.markdown-help code {
+  background: var(--bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.markdown-help ul {
+  margin: 8px 0;
+  padding-left: 16px;
+}
+
+.markdown-help li {
+  margin-bottom: 4px;
+}
+
+.preview-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.preview-link:hover {
+  text-decoration: underline;
+}
+{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'lessons:teach_dashboard' %}">← Back to Dashboard</a>
+
+<header class="form-header">
+  <div>
+    <h1>{{ form_title }}</h1>
+    {% if lesson %}
+      <p>Last updated {{ lesson.updated_at|timesince }} ago</p>
+    {% endif %}
+  </div>
+  {% if lesson %}
+    <a href="{% url 'lessons:lesson_preview' lesson.slug %}" class="btn-secondary" target="_blank">Preview</a>
+  {% endif %}
+</header>
+
+<form method="post">
+  {% csrf_token %}
+  
+  <div class="form-layout">
+    <div class="form-main">
+      <div class="form-card">
+        <div class="form-group">
+          <label for="id_title">Title</label>
+          {{ form.title }}
+          {% if form.title.errors %}
+            <ul class="error-list">{% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        
+        <div class="form-group">
+          <label for="id_summary">Summary</label>
+          {{ form.summary }}
+          {% if form.summary.errors %}
+            <ul class="error-list">{% for error in form.summary.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+          <span class="help-text">{{ form.summary.help_text }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="id_content_markdown">Content (Markdown)</label>
+          {{ form.content_markdown }}
+          {% if form.content_markdown.errors %}
+            <ul class="error-list">{% for error in form.content_markdown.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn">{{ submit_text }}</button>
+          <a href="{% url 'lessons:teach_dashboard' %}" class="btn-cancel">Cancel</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-sidebar">
+      <div class="form-card">
+        <div class="form-group">
+          <label for="id_slug">Slug</label>
+          {{ form.slug }}
+          {% if form.slug.errors %}
+            <ul class="error-list">{% for error in form.slug.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+          <span class="help-text">{{ form.slug.help_text }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="id_course">Course</label>
+          {{ form.course }}
+          {% if form.course.errors %}
+            <ul class="error-list">{% for error in form.course.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        
+        <div class="form-group">
+          <label for="id_order">Order</label>
+          {{ form.order }}
+          {% if form.order.errors %}
+            <ul class="error-list">{% for error in form.order.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+          <span class="help-text">{{ form.order.help_text }}</span>
+        </div>
+        
+        <div class="form-group">
+          <div class="form-checkbox-wrapper">
+            {{ form.is_published }}
+            <label for="id_is_published">Published</label>
+          </div>
+          <span class="help-text">{{ form.is_published.help_text }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label>Practice Problems</label>
+          <div class="form-checkbox-list">
+            {% for checkbox in form.problems %}
+              <label>{{ checkbox.tag }} {{ checkbox.choice_label }}</label>
+            {% empty %}
+              <span style="color: var(--muted);">No published problems available.</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-card" style="margin-top: 16px;">
+        <div class="markdown-help">
+          <h4>Markdown Cheatsheet</h4>
+          <ul>
+            <li><code># Heading 1</code></li>
+            <li><code>## Heading 2</code></li>
+            <li><code>**bold**</code> / <code>*italic*</code></li>
+            <li><code>`inline code`</code></li>
+            <li><code>```python</code> for code blocks</li>
+            <li><code>- item</code> for bullet lists</li>
+            <li><code>1. item</code> for numbered lists</li>
+            <li><code>[text](url)</code> for links</li>
+            <li><code>> quote</code> for blockquotes</li>
+          </ul>
+        </div>
+        
+        {% if lesson %}
+          <a href="{% url 'lessons:lesson_preview' lesson.slug %}" class="preview-link" target="_blank">
+            Open preview in new tab →
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

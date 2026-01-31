@@ -143,6 +143,9 @@
         <a href="{% url 'leaderboard' %}">Leaderboard</a>
         {% if user.is_authenticated %}
           <a href="{% url 'submissions:list' %}">My Submissions</a>
+          {% if user.is_staff %}
+            <a href="{% url 'lessons:teach_dashboard' %}">Teach</a>
+          {% endif %}
           <a href="{% url 'profile' %}">{{ user.username }}</a>
           <form method="post" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}

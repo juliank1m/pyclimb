@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--card);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.dashboard-card {
+  background: var(--card);
+  border: 1px solid #efe7d7;
+  border-radius: 14px;
+  padding: 20px 24px;
+}
+
+.dashboard-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-card h2 .count {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #efe7d7;
+}
+
+.item-list li:last-child {
+  border-bottom: none;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.item-title:hover {
+  color: var(--accent);
+}
+
+.item-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.status-published {
+  background: #d4edda;
+  color: var(--success);
+}
+
+.status-draft {
+  background: #fff3cd;
+  color: var(--warning);
+}
+
+.action-link {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.action-link:hover {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.action-link.danger:hover {
+  background: #f8d7da;
+  color: var(--error);
+}
+
+.toggle-form {
+  display: inline;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.toggle-btn:hover {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.nested-lessons {
+  margin-left: 20px;
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid #efe7d7;
+}
+
+.nested-lessons li {
+  padding: 8px 0;
+}
+
+.add-lesson-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.add-lesson-link:hover {
+  text-decoration: underline;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+}
+
+.messages {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+.messages li {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.messages .success {
+  background: #d4edda;
+  color: var(--success);
+}
+
+.messages .error {
+  background: #f8d7da;
+  color: var(--error);
+}
+
+.messages .warning {
+  background: #fff3cd;
+  color: var(--warning);
+}
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<header class="dashboard-header">
+  <h1>Teacher Dashboard</h1>
+  <div class="action-buttons">
+    <a href="{% url 'lessons:course_create' %}" class="btn-secondary">+ New Course</a>
+    <a href="{% url 'lessons:lesson_create' %}" class="btn">+ New Lesson</a>
+  </div>
+</header>
+
+<div class="dashboard-grid">
+  <div class="dashboard-card">
+    <h2>
+      Courses
+      <span class="count">{{ courses|length }} course{{ courses|length|pluralize }}</span>
+    </h2>
+    
+    {% if courses %}
+      <ul class="item-list">
+        {% for course in courses %}
+          <li>
+            <div class="item-info">
+              <a href="{% url 'lessons:course_edit' course.slug %}" class="item-title">
+                {{ course.title }}
+              </a>
+              <span class="item-meta">
+                {{ course.lessons.count }} lesson{{ course.lessons.count|pluralize }}
+              </span>
+              
+              {% if course.lessons.exists %}
+                <ul class="nested-lessons">
+                  {% for lesson in course.lessons.all %}
+                    <li>
+                      <div class="item-info">
+                        <a href="{% url 'lessons:lesson_edit' lesson.slug %}" class="item-title">
+                          {{ lesson.title }}
+                        </a>
+                      </div>
+                      <div class="item-actions">
+                        <span class="status-badge {% if lesson.is_published %}status-published{% else %}status-draft{% endif %}">
+                          {% if lesson.is_published %}Published{% else %}Draft{% endif %}
+                        </span>
+                        <a href="{% url 'lessons:lesson_preview' lesson.slug %}" class="action-link">Preview</a>
+                        <form method="post" action="{% url 'lessons:lesson_toggle_publish' lesson.slug %}" class="toggle-form">
+                          {% csrf_token %}
+                          <button type="submit" class="toggle-btn">
+                            {% if lesson.is_published %}Unpublish{% else %}Publish{% endif %}
+                          </button>
+                        </form>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+              
+              <a href="{% url 'lessons:lesson_create' %}?course={{ course.slug }}" class="add-lesson-link">+ Add lesson</a>
+            </div>
+            <div class="item-actions">
+              <span class="status-badge {% if course.is_published %}status-published{% else %}status-draft{% endif %}">
+                {% if course.is_published %}Published{% else %}Draft{% endif %}
+              </span>
+              <a href="{% url 'lessons:course_edit' course.slug %}" class="action-link">Edit</a>
+              <form method="post" action="{% url 'lessons:course_toggle_publish' course.slug %}" class="toggle-form">
+                {% csrf_token %}
+                <button type="submit" class="toggle-btn">
+                  {% if course.is_published %}Unpublish{% else %}Publish{% endif %}
+                </button>
+              </form>
+              <a href="{% url 'lessons:course_delete' course.slug %}" class="action-link danger">Delete</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-state">No courses yet. Create your first course to get started!</p>
+    {% endif %}
+  </div>
+  
+  <div>
+    <div class="dashboard-card" style="margin-bottom: 24px;">
+      <h2>
+        Standalone Lessons
+        <span class="count">{{ standalone_lessons|length }}</span>
+      </h2>
+      
+      {% if standalone_lessons %}
+        <ul class="item-list">
+          {% for lesson in standalone_lessons %}
+            <li>
+              <div class="item-info">
+                <a href="{% url 'lessons:lesson_edit' lesson.slug %}" class="item-title">
+                  {{ lesson.title }}
+                </a>
+              </div>
+              <div class="item-actions">
+                <span class="status-badge {% if lesson.is_published %}status-published{% else %}status-draft{% endif %}">
+                  {% if lesson.is_published %}Published{% else %}Draft{% endif %}
+                </span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-state">No standalone lessons.</p>
+      {% endif %}
+    </div>
+    
+    <div class="dashboard-card">
+      <h2>Recently Updated</h2>
+      
+      {% if recent_lessons %}
+        <ul class="item-list">
+          {% for lesson in recent_lessons %}
+            <li>
+              <div class="item-info">
+                <a href="{% url 'lessons:lesson_edit' lesson.slug %}" class="item-title">
+                  {{ lesson.title }}
+                </a>
+                <span class="item-meta">{{ lesson.updated_at|timesince }} ago</span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-state">No lessons yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

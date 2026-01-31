@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Preview: {{ lesson.title }} | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.preview-banner {
+  background: #fff3cd;
+  color: var(--warning);
+  padding: 12px 20px;
+  margin: -24px -20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.preview-banner strong {
+  font-weight: 600;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.preview-actions a {
+  color: var(--warning);
+  text-decoration: none;
+  padding: 4px 12px;
+  border: 1px solid var(--warning);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.preview-actions a:hover {
+  background: rgba(243, 156, 18, 0.1);
+}
+
+.lesson-header {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid #efe7d7;
+}
+
+.lesson-header h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 999px;
+  margin-left: 12px;
+}
+
+.status-published {
+  background: #d4edda;
+  color: var(--success);
+}
+
+.status-draft {
+  background: #fff3cd;
+  color: var(--warning);
+}
+
+.lesson-meta {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.lesson-content {
+  padding: 28px 32px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid #efe7d7;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.lesson-content h1,
+.lesson-content h2,
+.lesson-content h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.lesson-content h1:first-child,
+.lesson-content h2:first-child,
+.lesson-content h3:first-child {
+  margin-top: 0;
+}
+
+.lesson-content h2 {
+  font-size: 1.5rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #efe7d7;
+}
+
+.lesson-content h3 {
+  font-size: 1.2rem;
+}
+
+.lesson-content p {
+  margin: 1em 0;
+}
+
+.lesson-content ul,
+.lesson-content ol {
+  margin: 1em 0;
+  padding-left: 1.5em;
+}
+
+.lesson-content li {
+  margin-bottom: 0.5em;
+}
+
+.lesson-content code {
+  background: #f4f1ea;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 0.9em;
+}
+
+.lesson-content pre {
+  margin: 1.5em 0;
+  padding: 16px 20px;
+  background: #1e1e1e;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.lesson-content pre code {
+  background: none;
+  padding: 0;
+  color: #d4d4d4;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.lesson-content .highlight {
+  margin: 1.5em 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.lesson-content .highlight pre {
+  margin: 0;
+  padding: 16px 20px;
+  background: #1e1e1e;
+}
+
+.lesson-content blockquote {
+  margin: 1.5em 0;
+  padding: 12px 20px;
+  background: #f8f6f0;
+  border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+}
+
+.lesson-content blockquote p {
+  margin: 0;
+}
+
+.lesson-content a {
+  color: var(--accent);
+}
+
+.lesson-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+.lesson-content th,
+.lesson-content td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid #efe7d7;
+}
+
+.lesson-content th {
+  font-weight: 600;
+  background: var(--bg);
+}
+{% endblock %}
+
+{% block content %}
+<div class="preview-banner">
+  <span><strong>Preview Mode</strong> — This is how the lesson will appear to learners.</span>
+  <div class="preview-actions">
+    <a href="{% url 'lessons:lesson_edit' lesson.slug %}">Edit Lesson</a>
+    <a href="{% url 'lessons:teach_dashboard' %}">Back to Dashboard</a>
+  </div>
+</div>
+
+<header class="lesson-header">
+  <h1>
+    {{ lesson.title }}
+    <span class="status-badge {% if lesson.is_published %}status-published{% else %}status-draft{% endif %}">
+      {% if lesson.is_published %}Published{% else %}Draft{% endif %}
+    </span>
+  </h1>
+  <p class="lesson-meta">
+    {% if lesson.course %}
+      Course: {{ lesson.course.title }} •
+    {% endif %}
+    Updated {{ lesson.updated_at|timesince }} ago
+  </p>
+</header>
+
+<article class="lesson-content">
+  {{ content_html|safe }}
+</article>
+{% endblock %}
