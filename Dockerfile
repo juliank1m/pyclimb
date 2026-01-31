@@ -28,5 +28,9 @@ RUN SECRET_KEY=build-only-key DEBUG=false python manage.py collectstatic --noinp
 # Note: Migrations run via Procfile release command, NOT during build
 # The database isn't available at build time
 
-# Run gunicorn (Railway provides PORT via environment variable)
-CMD ["sh", "-c", "gunicorn pyclimb.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
+# Copy and set up entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Run gunicorn via entrypoint (Railway provides PORT via environment variable)
+ENTRYPOINT ["/docker-entrypoint.sh"]
