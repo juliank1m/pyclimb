@@ -28,7 +28,17 @@ def create_submission(request, problem_slug):
 
             return redirect('submissions:detail', pk=submission.pk)
     else:
-        form = SubmissionForm(problem=problem)
+        initial = {}
+        from_submission_id = request.GET.get('from_submission')
+        if from_submission_id:
+            from_submission = get_object_or_404(Submission, pk=from_submission_id)
+            if from_submission.problem_id != problem.id:
+                raise Http404("Submission not found")
+            if from_submission.user is not None:
+                if not request.user.is_authenticated or from_submission.user != request.user:
+                    raise Http404("Submission not found")
+            initial['code'] = from_submission.code
+        form = SubmissionForm(problem=problem, initial=initial)
 
     return render(request, 'submissions/create.html', {
         'form': form,
