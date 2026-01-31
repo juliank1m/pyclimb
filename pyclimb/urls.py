@@ -24,6 +24,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('problems/', include("problems.urls")),
     path('submissions/', include("submissions.urls")),
+    path('learn/', include("lessons.urls")),
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('admin/', admin.site.urls),
     

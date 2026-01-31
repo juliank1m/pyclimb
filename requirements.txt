@@ -3,6 +3,10 @@ Django>=6.0.1
 psycopg2-binary>=2.9.11
 python-dotenv>=1.2.1
 
+# Markdown rendering for lessons
+Markdown>=3.5
+Pygments>=2.17  # Code syntax highlighting
+
 # Optional: For production deployment
 gunicorn>=21.0.0
 

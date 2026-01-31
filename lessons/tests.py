@@ -1,11 +1,202 @@
 import pytest
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 from .models import Course, Lesson
 from problems.models import Problem
 
 
 User = get_user_model()
+
+
+class LearnIndexViewTests(TestCase):
+    """Tests for the learn index page."""
+    
+    def setUp(self):
+        self.client = Client()
+    
+    def test_index_shows_published_courses(self):
+        """Published courses appear on the index page."""
+        Course.objects.create(title="Published Course", is_published=True)
+        Course.objects.create(title="Draft Course", is_published=False)
+        
+        response = self.client.get(reverse('lessons:index'))
+        
+        assert response.status_code == 200
+        assert 'Published Course' in response.content.decode()
+        assert 'Draft Course' not in response.content.decode()
+    
+    def test_index_shows_standalone_lessons(self):
+        """Published standalone lessons appear on the index page."""
+        Lesson.objects.create(
+            title="Standalone Lesson",
+            content_markdown="Content",
+            is_published=True
+        )
+        
+        response = self.client.get(reverse('lessons:index'))
+        
+        assert response.status_code == 200
+        assert 'Standalone Lesson' in response.content.decode()
+    
+    def test_empty_index(self):
+        """Empty state message when no content."""
+        response = self.client.get(reverse('lessons:index'))
+        
+        assert response.status_code == 200
+        assert 'No lessons available' in response.content.decode()
+
+
+class CourseDetailViewTests(TestCase):
+    """Tests for course detail page."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.course = Course.objects.create(
+            title="Python Basics",
+            slug="python-basics",
+            is_published=True
+        )
+        self.lesson = Lesson.objects.create(
+            title="Variables",
+            slug="variables",
+            course=self.course,
+            content_markdown="# Variables\n\nLearn about variables.",
+            is_published=True
+        )
+    
+    def test_published_course_accessible(self):
+        """Published courses are accessible."""
+        response = self.client.get(
+            reverse('lessons:course_detail', args=['python-basics'])
+        )
+        
+        assert response.status_code == 200
+        assert 'Python Basics' in response.content.decode()
+        assert 'Variables' in response.content.decode()
+    
+    def test_draft_course_404_for_anonymous(self):
+        """Draft courses return 404 for anonymous users."""
+        draft_course = Course.objects.create(
+            title="Draft Course",
+            slug="draft-course",
+            is_published=False
+        )
+        
+        response = self.client.get(
+            reverse('lessons:course_detail', args=['draft-course'])
+        )
+        
+        assert response.status_code == 404
+    
+    def test_draft_course_visible_to_staff(self):
+        """Staff can view draft courses."""
+        staff_user = User.objects.create_user(
+            username='staff',
+            password='testpass',
+            is_staff=True
+        )
+        draft_course = Course.objects.create(
+            title="Draft Course",
+            slug="draft-course",
+            is_published=False
+        )
+        
+        self.client.login(username='staff', password='testpass')
+        response = self.client.get(
+            reverse('lessons:course_detail', args=['draft-course'])
+        )
+        
+        assert response.status_code == 200
+        assert 'Draft Course' in response.content.decode()
+
+
+class LessonDetailViewTests(TestCase):
+    """Tests for lesson detail page."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.course = Course.objects.create(
+            title="Python Basics",
+            slug="python-basics",
+            is_published=True
+        )
+        self.lesson = Lesson.objects.create(
+            title="Variables",
+            slug="variables",
+            course=self.course,
+            content_markdown="# Variables\n\nLearn about **variables** in Python.\n\n```python\nx = 5\n```",
+            is_published=True
+        )
+    
+    def test_lesson_renders_markdown(self):
+        """Lesson content is rendered as HTML."""
+        response = self.client.get(
+            reverse('lessons:lesson_detail', args=['python-basics', 'variables'])
+        )
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        # Check markdown was rendered
+        assert '<strong>variables</strong>' in content or '<b>variables</b>' in content.lower()
+    
+    def test_draft_lesson_404_for_anonymous(self):
+        """Draft lessons return 404 for anonymous users."""
+        draft_lesson = Lesson.objects.create(
+            title="Draft Lesson",
+            slug="draft-lesson",
+            course=self.course,
+            content_markdown="Draft content",
+            is_published=False
+        )
+        
+        response = self.client.get(
+            reverse('lessons:lesson_detail', args=['python-basics', 'draft-lesson'])
+        )
+        
+        assert response.status_code == 404
+    
+    def test_lesson_shows_linked_problems(self):
+        """Linked problems appear on lesson page."""
+        problem = Problem.objects.create(
+            title="Practice Problem",
+            description="Practice",
+            difficulty=1,
+            is_published=True
+        )
+        self.lesson.problems.add(problem)
+        
+        response = self.client.get(
+            reverse('lessons:lesson_detail', args=['python-basics', 'variables'])
+        )
+        
+        assert response.status_code == 200
+        assert 'Practice Problem' in response.content.decode()
+    
+    def test_lesson_navigation(self):
+        """Prev/next navigation appears."""
+        lesson2 = Lesson.objects.create(
+            title="Functions",
+            slug="functions",
+            course=self.course,
+            content_markdown="Functions content",
+            order=2,
+            is_published=True
+        )
+        self.lesson.order = 1
+        self.lesson.save()
+        
+        # Check lesson 1 has "next" link
+        response = self.client.get(
+            reverse('lessons:lesson_detail', args=['python-basics', 'variables'])
+        )
+        assert 'Functions' in response.content.decode()
+        
+        # Check lesson 2 has "previous" link
+        response = self.client.get(
+            reverse('lessons:lesson_detail', args=['python-basics', 'functions'])
+        )
+        assert 'Variables' in response.content.decode()
 
 
 class CourseModelTests(TestCase):

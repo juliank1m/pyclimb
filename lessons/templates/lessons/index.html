@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Learn | PyClimb{% endblock %}
+
+{% block extra_styles %}
+header.page-header {
+  padding: 24px 0 12px;
+  text-align: center;
+}
+header.page-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  letter-spacing: 0.02em;
+}
+header.page-header p.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.section-title {
+  margin: 32px 0 16px;
+  font-size: 1.3rem;
+  color: var(--ink);
+}
+
+ul.course-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+a.course-card {
+  display: block;
+  padding: 20px 22px;
+  background: var(--card);
+  border: 1px solid #efe7d7;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+a.course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(34, 32, 19, 0.12);
+  border-color: var(--accent);
+}
+
+.course-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+}
+
+.course-card .description {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.course-card .meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.course-card .lesson-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.course-card .lesson-count svg {
+  width: 16px;
+  height: 16px;
+}
+
+ul.lesson-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+a.lesson-card {
+  display: block;
+  padding: 16px 20px;
+  background: var(--card);
+  border: 1px solid #efe7d7;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 12px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+a.lesson-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(34, 32, 19, 0.08);
+}
+
+.lesson-card h3 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.lesson-card .summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.empty {
+  margin-top: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>Learn</h1>
+  <p class="subtitle">Structured lessons to master Python programming</p>
+</header>
+
+{% if courses %}
+  <h2 class="section-title">Courses</h2>
+  <ul class="course-list">
+    {% for course in courses %}
+      <li>
+        <a class="course-card" href="{% url 'lessons:course_detail' course.slug %}">
+          <h2>{{ course.title }}</h2>
+          {% if course.description %}
+            <p class="description">{{ course.description|truncatewords:20 }}</p>
+          {% endif %}
+          <div class="meta">
+            <span class="lesson-count">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              {{ course.published_lessons.count }} lesson{{ course.published_lessons.count|pluralize }}
+            </span>
+          </div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if standalone_lessons %}
+  <h2 class="section-title">{% if courses %}Standalone Lessons{% else %}Lessons{% endif %}</h2>
+  <ul class="lesson-list">
+    {% for lesson in standalone_lessons %}
+      <li>
+        <a class="lesson-card" href="{% url 'lessons:lesson_detail' 'standalone' lesson.slug %}">
+          <h3>{{ lesson.title }}</h3>
+          {% if lesson.summary %}
+            <p class="summary">{{ lesson.summary }}</p>
+          {% endif %}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if not courses and not standalone_lessons %}
+  <p class="empty">No lessons available yet. Check back soon!</p>
+{% endif %}
+{% endblock %}
