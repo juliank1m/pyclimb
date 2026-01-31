@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.venv
+venv
+env
+.pytest_cache
+.coverage
+htmlcov
+*.egg-info
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Local files
+.env
+.env.*
+*.log
+db.sqlite3
+media/
+
+# Build artifacts
+staticfiles/
+dist/
+build/
+
+# Documentation
+*.md
+!README.md
+
+# Tests (not needed in production)
+conftest.py
+pytest.ini
+**/tests.py
+
+# Sandbox (separate container)
+sandbox/
