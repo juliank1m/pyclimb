@@ -280,3 +280,18 @@ def leaderboard(request):
     }
     
     return render(request, 'leaderboard.html', context)
+
+
+def privacy_policy(request):
+    """Display privacy policy."""
+    return render(request, 'legal/privacy.html')
+
+
+def terms_of_service(request):
+    """Display terms of service."""
+    return render(request, 'legal/terms.html')
+
+
+def cookie_policy(request):
+    """Display cookie policy."""
+    return render(request, 'legal/cookies.html')

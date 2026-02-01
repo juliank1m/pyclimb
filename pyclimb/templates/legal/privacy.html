@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.legal-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 12px 0 24px;
+}
+.legal-page h1 {
+  margin: 0 0 12px;
+  font-size: 2.2rem;
+}
+.legal-page h2 {
+  margin: 24px 0 8px;
+  font-size: 1.2rem;
+}
+.legal-page p,
+.legal-page li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.legal-page ul {
+  margin: 8px 0 16px 18px;
+}
+.legal-note {
+  background: #fff7ec;
+  border: 1px solid #efe7d7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #4a4234;
+}
+{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+  <h1>Privacy Policy</h1>
+  <p class="legal-note">This is a Canada-style privacy policy template for a fictional entity and is not a real legal document. It references PIPEDA and common Canadian best practices. Replace placeholders before real use.</p>
+
+  <p>Effective date: January 1, 2026</p>
+
+  <h2>Who We Are</h2>
+  <p>PyClimb (“we,” “us,” or “our”) provides online coding challenges and learning tools. We operate from Canada.</p>
+
+  <h2>Privacy Officer</h2>
+  <p>Privacy Officer: PyClimb Privacy Team</p>
+  <p>Email: privacy@pyclimb.com</p>
+  <p>Mailing address: 100 King St W, Suite 5700, Toronto, ON, M5X 1C7, Canada</p>
+
+  <h2>Scope and Applicable Laws</h2>
+  <p>This policy is designed to align with Canada’s Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy laws.</p>
+
+  <h2>Information We Collect</h2>
+  <ul>
+    <li>Account data: username, email address, and password hash.</li>
+    <li>Usage data: pages visited, features used, and problem submissions.</li>
+    <li>Technical data: device type, browser, and IP address.</li>
+    <li>Communications: support requests and feedback you send us.</li>
+  </ul>
+
+  <h2>How We Use Information</h2>
+  <ul>
+    <li>To provide and improve the PyClimb learning experience.</li>
+    <li>To process submissions, track progress, and show leaderboards.</li>
+    <li>To respond to support requests and communicate about your account.</li>
+  </ul>
+
+  <h2>Consent</h2>
+  <p>We collect, use, and disclose personal information with your consent or as permitted by law. You may withdraw consent, subject to legal or contractual restrictions.</p>
+
+  <h2>Sharing and Service Providers</h2>
+  <p>We do not sell personal information. We may share information with trusted service providers who help operate the platform (such as hosting, email delivery, or analytics) under confidentiality obligations.</p>
+
+  <h2>Cross-Border Processing</h2>
+  <p>Your information may be processed or stored outside Canada where service providers operate. In those cases, information may be subject to the laws of those jurisdictions.</p>
+
+  <h2>Retention</h2>
+  <p>We retain personal information only as long as needed to provide services or meet legal obligations, and then securely delete or anonymize it.</p>
+
+  <h2>Your Rights</h2>
+  <ul>
+    <li>Access and correct your personal information.</li>
+    <li>Request deletion of your account, subject to legal requirements.</li>
+    <li>Ask questions about our privacy practices.</li>
+  </ul>
+
+  <h2>Security</h2>
+  <p>We use reasonable administrative, technical, and physical safeguards to protect your information.</p>
+
+  <h2>Changes</h2>
+  <p>We may update this policy from time to time. We will update the effective date and, if changes are material, provide notice.</p>
+
+  <h2>Contact</h2>
+  <p>If you have questions or requests, contact privacy@pyclimb.com.</p>
+</section>
+{% endblock %}

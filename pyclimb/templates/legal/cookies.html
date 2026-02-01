@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Cookie Policy | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.legal-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 12px 0 24px;
+}
+.legal-page h1 {
+  margin: 0 0 12px;
+  font-size: 2.2rem;
+}
+.legal-page h2 {
+  margin: 24px 0 8px;
+  font-size: 1.2rem;
+}
+.legal-page p,
+.legal-page li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.legal-page ul {
+  margin: 8px 0 16px 18px;
+}
+.legal-note {
+  background: #fff7ec;
+  border: 1px solid #efe7d7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #4a4234;
+}
+{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+  <h1>Cookie Policy</h1>
+  <p class="legal-note">This is a Canada-style cookie policy template for a fictional entity and is not a real legal document. It is not legal advice and should be reviewed before real use.</p>
+
+  <p>Effective date: January 1, 2026</p>
+
+  <h2>What Are Cookies?</h2>
+  <p>Cookies are small text files stored on your device to help sites remember preferences and activity.</p>
+
+  <h2>How We Use Cookies</h2>
+  <ul>
+    <li>Essential cookies for authentication, security, and session management.</li>
+    <li>Preference cookies to remember settings.</li>
+    <li>Analytics cookies to understand product usage and improve the service.</li>
+  </ul>
+
+  <h2>Consent</h2>
+  <p>Where required by law, we request consent before placing non-essential cookies.</p>
+
+  <h2>Your Choices</h2>
+  <p>You can manage cookies through your browser settings. Some features may not work correctly if you disable cookies.</p>
+
+  <h2>Contact</h2>
+  <p>If you have questions, contact support@pyclimb.com.</p>
+</section>
+{% endblock %}

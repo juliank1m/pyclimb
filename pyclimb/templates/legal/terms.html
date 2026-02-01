@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms of Service | PyClimb{% endblock %}
+
+{% block extra_styles %}
+.legal-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 12px 0 24px;
+}
+.legal-page h1 {
+  margin: 0 0 12px;
+  font-size: 2.2rem;
+}
+.legal-page h2 {
+  margin: 24px 0 8px;
+  font-size: 1.2rem;
+}
+.legal-page p,
+.legal-page li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.legal-page ul {
+  margin: 8px 0 16px 18px;
+}
+.legal-note {
+  background: #fff7ec;
+  border: 1px solid #efe7d7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #4a4234;
+}
+{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+  <h1>Terms of Service</h1>
+  <p class="legal-note">This is a Canada-style terms template for a fictional entity and is not a real legal document. It is not legal advice and should be reviewed before real use.</p>
+
+  <p>Effective date: January 1, 2026</p>
+
+  <h2>Acceptance of Terms</h2>
+  <p>By accessing or using PyClimb, you agree to these Terms of Service and our Privacy Policy.</p>
+
+  <h2>Eligibility</h2>
+  <p>You must be at least the age of majority in your province or territory, or use PyClimb with consent of a parent or guardian.</p>
+
+  <h2>Accounts</h2>
+  <ul>
+    <li>You are responsible for maintaining the security of your account and credentials.</li>
+    <li>You must provide accurate information and keep it up to date.</li>
+  </ul>
+
+  <h2>Platform Rules</h2>
+  <ul>
+    <li>Do not misuse the platform, attempt unauthorized access, or disrupt service.</li>
+    <li>Submissions should be your own unless explicitly permitted.</li>
+    <li>Do not upload unlawful, harmful, or infringing content.</li>
+  </ul>
+
+  <h2>Intellectual Property</h2>
+  <p>PyClimb content is owned by PyClimb or its licensors. You may not copy, modify, or redistribute without permission.</p>
+
+  <h2>Third-Party Services</h2>
+  <p>Some features may link to or rely on third-party services. We are not responsible for their content or policies.</p>
+
+  <h2>Termination</h2>
+  <p>We may suspend or terminate accounts that violate these terms or applicable law.</p>
+
+  <h2>Disclaimer of Warranties</h2>
+  <p>The service is provided “as is” and “as available,” without warranties of any kind.</p>
+
+  <h2>Limitation of Liability</h2>
+  <p>To the extent permitted by law, PyClimb is not liable for indirect, incidental, or consequential damages arising from use of the service.</p>
+
+  <h2>Governing Law</h2>
+  <p>These terms are governed by the laws of Ontario and the federal laws of Canada applicable therein, without regard to conflict of law rules.</p>
+
+  <h2>Contact</h2>
+  <p>If you have questions, contact support@pyclimb.com.</p>
+</section>
+{% endblock %}
