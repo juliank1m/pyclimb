@@ -293,3 +293,9 @@ This project is licensed under the **MIT License**.
 
 This repository reflects an **in-progress learning project**.  
 Design decisions may evolve as new concepts are explored and refined.
+
+### Branch Notes (prod-safe)
+
+The `prod-safe` branch is intended for production deployments that **disable code submissions by default** for safety.  
+It adds a UI banner and a server-side guard that blocks submissions unless `SUBMISSIONS_ENABLED=true` is set.  
+Main branch remains the full product experience with submissions enabled in development.

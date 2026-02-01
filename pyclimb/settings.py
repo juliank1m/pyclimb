@@ -72,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'pyclimb.context_processors.submissions_enabled',
             ],
         },
     },
@@ -198,6 +199,11 @@ RATELIMIT_ENABLE = not DEBUG
 RATELIMIT_SUBMISSION_LIMIT = 10  # submissions per minute
 RATELIMIT_REGISTER_LIMIT = 5     # registrations per hour per IP
 RATELIMIT_LOGIN_LIMIT = 10       # login attempts per 5 minutes
+
+# Submissions toggle (default on in dev, off in prod unless explicitly enabled)
+SUBMISSIONS_ENABLED = os.environ.get('SUBMISSIONS_ENABLED', '').lower() in ('true', '1', 'yes')
+if DEBUG and os.environ.get('SUBMISSIONS_ENABLED', '') == '':
+    SUBMISSIONS_ENABLED = True
 
 # Sandbox configuration
 PYCLIMB_USE_SANDBOX = os.environ.get('PYCLIMB_USE_SANDBOX', 'false').lower() in ('true', '1', 'yes')

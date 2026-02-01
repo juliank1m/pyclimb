@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
+from django.contrib import messages
 from django.views import generic
 from .models import Problem, Tag, DIFFICULTY_CHOICES
 
@@ -101,6 +103,9 @@ class DetailView(generic.DetailView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        if not getattr(settings, 'SUBMISSIONS_ENABLED', True):
+            messages.error(request, 'Submissions are disabled in this environment.')
+            return redirect('problems:detail', slug=self.object.slug)
         from submissions.forms import SubmissionForm
         form = SubmissionForm(request.POST, problem=self.object)
         if form.is_valid():
