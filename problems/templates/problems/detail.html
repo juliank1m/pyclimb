@@ -214,140 +214,443 @@ header.problem-header h1 {
   background: var(--accent);
   color: white;
 }
+.problem-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+  gap: 28px;
+  align-items: start;
+}
+.problem-column {
+  min-width: 0;
+}
+.submission-column {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+@media (max-width: 980px) {
+  .problem-layout {
+    grid-template-columns: 1fr;
+  }
+  .submission-column {
+    position: static;
+  }
+}
+header.submit-header {
+  margin: 0 0 18px;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid #efe7d7;
+  box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+}
+header.submit-header h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+}
+textarea#id_code {
+  width: 100%;
+  padding: 16px;
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  resize: vertical;
+  min-height: 300px;
+}
+textarea#id_code:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.cm-editor {
+  background: #282c34;
+}
+.cm-editor.cm-focused {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.error-list {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  background: #fdf2f2;
+  border: 1px solid var(--error);
+  border-radius: 8px;
+  color: var(--error);
+  list-style: none;
+}
+.format-guide {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8f6f0;
+  border-radius: 10px;
+  border-left: 4px solid var(--accent);
+}
+.format-guide h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--accent);
+}
+.format-guide p {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.format-guide code {
+  background: #e8e4dc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 0.9em;
+}
+.format-guide ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 0.95rem;
+}
+.format-guide li {
+  margin-bottom: 4px;
+}
+.draft-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.draft-status {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.draft-status.saved {
+  color: var(--success);
+}
+.btn-secondary {
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 {% endblock %}
 
 {% block content %}
 <a class="back" href="{% url 'problems:index' %}">← Back to all problems</a>
 
-<header class="problem-header">
-  <span class="difficulty">{{ problem.get_difficulty_display }}</span>
-  <h1>{{ problem.title }}</h1>
-  <p class="muted">Updated {{ problem.updated_at|date:"M j, Y" }}</p>
-  {% if problem.tags.all %}
-    <div class="tag-list">
-      {% for tag in problem.tags.all %}
-        <a href="{% url 'problems:index' %}?tag={{ tag.slug }}" class="tag">{{ tag.name }}</a>
-      {% endfor %}
-    </div>
-  {% endif %}
-</header>
+<div class="problem-layout">
+  <div class="problem-column">
+    <header class="problem-header">
+      <span class="difficulty">{{ problem.get_difficulty_display }}</span>
+      <h1>{{ problem.title }}</h1>
+      <p class="muted">Updated {{ problem.updated_at|date:"M j, Y" }}</p>
+      {% if problem.tags.all %}
+        <div class="tag-list">
+          {% for tag in problem.tags.all %}
+            <a href="{% url 'problems:index' %}?tag={{ tag.slug }}" class="tag">{{ tag.name }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </header>
 
-<section class="section">
-  <h2>Problem</h2>
-  <p>{{ problem.description|linebreaksbr }}</p>
-</section>
-
-{% if problem.constraints %}
-  <section class="section">
-    <h2>Constraints</h2>
-    <p>{{ problem.constraints|linebreaksbr }}</p>
-  </section>
-{% endif %}
-
-{% if problem.follow_up %}
-  <section class="section">
-    <h2>Follow Up</h2>
-    <p>{{ problem.follow_up|linebreaksbr }}</p>
-  </section>
-{% endif %}
-
-{% with samples=problem.sample_cases %}
-  {% if samples %}
     <section class="section">
-      <h2>Examples</h2>
-      {% for case in samples %}
-        <div class="example">
-          <h3>Example {{ forloop.counter }}</h3>
-          <div class="example-row">
-            <span class="example-label">Input:</span>
-            <span class="example-value">{{ case.display_input }}</span>
-          </div>
-          <div class="example-row">
-            <span class="example-label">Output:</span>
-            <span class="example-value">{{ case.display_output }}</span>
-          </div>
-          {% if case.explanation %}
-            <div class="example-explanation">{{ case.explanation }}</div>
+      <h2>Problem</h2>
+      <p>{{ problem.description|linebreaksbr }}</p>
+    </section>
+
+    {% if problem.constraints %}
+      <section class="section">
+        <h2>Constraints</h2>
+        <p>{{ problem.constraints|linebreaksbr }}</p>
+      </section>
+    {% endif %}
+
+    {% if problem.follow_up %}
+      <section class="section">
+        <h2>Follow Up</h2>
+        <p>{{ problem.follow_up|linebreaksbr }}</p>
+      </section>
+    {% endif %}
+
+    {% with samples=problem.sample_cases %}
+      {% if samples %}
+        <section class="section">
+          <h2>Examples</h2>
+          {% for case in samples %}
+            <div class="example">
+              <h3>Example {{ forloop.counter }}</h3>
+              <div class="example-row">
+                <span class="example-label">Input:</span>
+                <span class="example-value">{{ case.display_input }}</span>
+              </div>
+              <div class="example-row">
+                <span class="example-label">Output:</span>
+                <span class="example-value">{{ case.display_output }}</span>
+              </div>
+              {% if case.explanation %}
+                <div class="example-explanation">{{ case.explanation }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    {% if problem.judge_mode == 'function' %}
+      {% if problem.signature_text %}
+        <div class="signature-box">
+          <h2>Function Signature</h2>
+          <pre class="signature-code">{{ problem.signature_text }}</pre>
+        </div>
+      {% endif %}
+
+      <div class="io-format">
+        <h2>How to Submit</h2>
+        {% if problem.entrypoint_type == 'class' %}
+          <p>
+            Implement a <code>Solution</code> class with a <code>{{ problem.entrypoint_name }}</code> method.
+          </p>
+          <p>
+            Your method will be called with the input parameters and should <strong>return</strong> the answer.
+          </p>
+        {% else %}
+          <p>
+            Implement a function called <code>{{ problem.entrypoint_name }}</code>.
+          </p>
+          <p>
+            Your function will be called with the input parameters and should <strong>return</strong> the answer.
+          </p>
+        {% endif %}
+      </div>
+    {% else %}
+      {# Standard I/O mode #}
+      <div class="io-format">
+        <h2>How to Submit</h2>
+        <p>
+          Your solution should read from <strong>standard input</strong> and write to <strong>standard output</strong>.
+        </p>
+        <p>
+          Use <code>input()</code> to read each line of input, and <code>print()</code> to output your answer.
+        </p>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-top: 10px;">
+          The "Input" shown in examples above is what your program receives via <code>input()</code>.
+          The "Output" is what your program should <code>print()</code>.
+        </p>
+      </div>
+    {% endif %}
+
+    {% if user_submissions %}
+      <section class="section" style="margin-top: 22px;">
+        <h2>Your Submissions</h2>
+        <table class="submissions-mini">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Verdict</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in user_submissions %}
+              <tr>
+                <td><a href="{% url 'submissions:detail' sub.pk %}">#{{ sub.pk }}</a></td>
+                <td>
+                  <span class="verdict-badge verdict-{{ sub.verdict }}">
+                    {{ sub.get_verdict_display }}
+                  </span>
+                </td>
+                <td>{{ sub.created_at|date:"M j, g:i A" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p style="margin-top: 12px; font-size: 0.9rem;">
+          <a href="{% url 'submissions:list' %}?problem={{ problem.slug }}" style="color: var(--accent);">View all submissions →</a>
+        </p>
+      </section>
+    {% endif %}
+
+  </div>
+
+  <aside class="submission-column">
+    <header class="submit-header">
+      <h1>Submit Solution</h1>
+      <p style="margin: 8px 0 0; color: var(--muted);">{{ problem.title }}</p>
+    </header>
+
+    <section class="section">
+      <h2>Your Code</h2>
+      
+      {% if problem.judge_mode == 'function' %}
+        {# Function-call mode guidance #}
+        <div class="format-guide">
+          <h3>Submission Format</h3>
+          {% if problem.entrypoint_type == 'class' %}
+            <p>Implement a <code>Solution</code> class with a <code>{{ problem.entrypoint_name }}</code> method.</p>
+            <p>Your method will be called with test inputs and should <strong>return</strong> the answer.</p>
+          {% else %}
+            <p>Implement a function called <code>{{ problem.entrypoint_name }}</code>.</p>
+            <p>Your function will be called with test inputs and should <strong>return</strong> the answer.</p>
+          {% endif %}
+          {% if problem.signature_text %}
+            <p style="margin-top: 10px;"><strong>Signature:</strong> <code>{{ problem.signature_text }}</code></p>
           {% endif %}
         </div>
-      {% endfor %}
+      {% else %}
+        {# Standard I/O mode guidance #}
+        <div class="format-guide">
+          <h3>Input/Output Format</h3>
+          <p>Your code should:</p>
+          <ul>
+            <li>Read input using <code>input()</code></li>
+            <li>Print output using <code>print()</code></li>
+          </ul>
+          <p style="margin-top: 12px; color: var(--muted); font-size: 0.9rem;">
+            See the Examples section on the problem page for the exact input/output format.
+          </p>
+        </div>
+      {% endif %}
+
+      {% if form.errors %}
+        <ul class="error-list">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="draft-controls">
+        <span id="draft-status" class="draft-status"></span>
+        <button type="button" id="clear-draft" class="btn-secondary" style="display: none;">Clear Draft</button>
+      </div>
+
+      <form method="post" id="submit-form">
+        {% csrf_token %}
+        {{ form.code }}
+        <button type="submit" class="btn" style="margin-top: 16px;">Submit</button>
+      </form>
     </section>
-  {% endif %}
-{% endwith %}
+  </aside>
+</div>
 
-{% if problem.judge_mode == 'function' %}
-  {% if problem.signature_text %}
-    <div class="signature-box">
-      <h2>Function Signature</h2>
-      <pre class="signature-code">{{ problem.signature_text }}</pre>
-    </div>
-  {% endif %}
+<!-- CodeMirror 5 from CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<style>
+  .CodeMirror {
+    height: auto;
+    min-height: 300px;
+    max-height: 600px;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  }
+  .CodeMirror-scroll {
+    min-height: 300px;
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const DRAFT_KEY = 'pyclimb_draft_{{ problem.slug }}';
+    const textarea = document.querySelector('textarea#id_code');
+    const statusEl = document.getElementById('draft-status');
+    const clearBtn = document.getElementById('clear-draft');
+    const form = document.getElementById('submit-form');
 
-  <div class="io-format">
-    <h2>How to Submit</h2>
-    {% if problem.entrypoint_type == 'class' %}
-      <p>
-        Implement a <code>Solution</code> class with a <code>{{ problem.entrypoint_name }}</code> method.
-      </p>
-      <p>
-        Your method will be called with the input parameters and should <strong>return</strong> the answer.
-      </p>
-    {% else %}
-      <p>
-        Implement a function called <code>{{ problem.entrypoint_name }}</code>.
-      </p>
-      <p>
-        Your function will be called with the input parameters and should <strong>return</strong> the answer.
-      </p>
-    {% endif %}
-  </div>
-{% else %}
-  {# Standard I/O mode #}
-  <div class="io-format">
-    <h2>How to Submit</h2>
-    <p>
-      Your solution should read from <strong>standard input</strong> and write to <strong>standard output</strong>.
-    </p>
-    <p>
-      Use <code>input()</code> to read each line of input, and <code>print()</code> to output your answer.
-    </p>
-    <p style="color: var(--muted); font-size: 0.9rem; margin-top: 10px;">
-      The "Input" shown in examples above is what your program receives via <code>input()</code>.
-      The "Output" is what your program should <code>print()</code>.
-    </p>
-  </div>
-{% endif %}
+    if (!textarea) return;
 
-{% if user_submissions %}
-  <section class="section" style="margin-top: 22px;">
-    <h2>Your Submissions</h2>
-    <table class="submissions-mini">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Verdict</th>
-          <th>Submitted</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for sub in user_submissions %}
-          <tr>
-            <td><a href="{% url 'submissions:detail' sub.pk %}">#{{ sub.pk }}</a></td>
-            <td>
-              <span class="verdict-badge verdict-{{ sub.verdict }}">
-                {{ sub.get_verdict_display }}
-              </span>
-            </td>
-            <td>{{ sub.created_at|date:"M j, g:i A" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <p style="margin-top: 12px; font-size: 0.9rem;">
-      <a href="{% url 'submissions:list' %}?problem={{ problem.slug }}" style="color: var(--accent);">View all submissions →</a>
-    </p>
-  </section>
-{% endif %}
+    // Get initial value (from draft or textarea)
+    let initialValue = localStorage.getItem(DRAFT_KEY) || textarea.value || '';
+    if (initialValue && !textarea.value.trim()) {
+      textarea.value = initialValue;
+      updateStatus('Draft restored');
+      clearBtn.style.display = 'inline-block';
+    }
 
-<a class="submit-btn" href="{% url 'submissions:create' problem.slug %}">Submit Solution</a>
+    // Create CodeMirror editor
+    const editor = CodeMirror.fromTextArea(textarea, {
+      mode: 'python',
+      theme: 'dracula',
+      lineNumbers: true,
+      indentUnit: 4,
+      tabSize: 4,
+      indentWithTabs: false,
+      lineWrapping: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      extraKeys: {
+        'Tab': function(cm) {
+          cm.replaceSelection('    ', 'end');
+        }
+      }
+    });
+
+    // Set initial value if from draft
+    if (initialValue) {
+      editor.setValue(initialValue);
+    }
+
+    let saveTimeout = null;
+
+    function updateStatus(msg) {
+      statusEl.textContent = msg;
+      statusEl.classList.toggle('saved', msg.includes('saved') || msg.includes('restored'));
+      if (msg) {
+        setTimeout(() => {
+          if (statusEl.textContent === msg) {
+            statusEl.textContent = '';
+          }
+        }, 3000);
+      }
+    }
+
+    function saveDraft(code) {
+      if (code.trim()) {
+        localStorage.setItem(DRAFT_KEY, code);
+        updateStatus('Draft saved');
+        clearBtn.style.display = 'inline-block';
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+        clearBtn.style.display = 'none';
+        updateStatus('');
+      }
+    }
+
+    // Auto-save on change
+    editor.on('change', function() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => saveDraft(editor.getValue()), 500);
+    });
+
+    // Clear button handler
+    clearBtn.addEventListener('click', function() {
+      localStorage.removeItem(DRAFT_KEY);
+      editor.setValue('');
+      clearBtn.style.display = 'none';
+      updateStatus('Draft cleared');
+    });
+
+    // Sync to textarea on form submit, but keep draft for failed submissions
+    form.addEventListener('submit', function() {
+      textarea.value = editor.getValue();
+      saveDraft(editor.getValue());
+    });
+
+    // Store editor reference
+    window.codeEditor = editor;
+  });
+</script>
 {% endblock %}

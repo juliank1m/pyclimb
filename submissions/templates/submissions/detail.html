@@ -357,7 +357,7 @@ pre.code code.hljs {
 </section>
 
 <div style="margin-top: 24px;">
-  <a class="back" href="{% url 'submissions:create' submission.problem.slug %}?from_submission={{ submission.pk }}">← Submit Again</a>
+  <a class="back" href="{% url 'problems:detail' submission.problem.slug %}?from_submission={{ submission.pk }}">← Submit Again</a>
 </div>
 
 <script>

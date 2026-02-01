@@ -1,49 +1,18 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import redirect
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.urls import reverse
 
-from problems.models import Problem
 from .models import Submission
-from .forms import SubmissionForm
-from .services.judge import run_judge
 
 
 def create_submission(request, problem_slug):
-    """Handle code submission for a problem."""
-    problem = get_object_or_404(Problem, slug=problem_slug, is_published=True)
-
-    if request.method == 'POST':
-        form = SubmissionForm(request.POST, problem=problem)
-        if form.is_valid():
-            submission = form.save(commit=False)
-            submission.problem = problem
-            # Attach user if authenticated (optional for MVP)
-            if request.user.is_authenticated:
-                submission.user = request.user
-            submission.save()
-
-            # Run the judge synchronously (MVP - no async queue)
-            run_judge(submission)
-
-            return redirect('submissions:detail', pk=submission.pk)
-    else:
-        initial = {}
-        from_submission_id = request.GET.get('from_submission')
-        if from_submission_id:
-            from_submission = get_object_or_404(Submission, pk=from_submission_id)
-            if from_submission.problem_id != problem.id:
-                raise Http404("Submission not found")
-            if from_submission.user is not None:
-                if not request.user.is_authenticated or from_submission.user != request.user:
-                    raise Http404("Submission not found")
-            initial['code'] = from_submission.code
-        form = SubmissionForm(problem=problem, initial=initial)
-
-    return render(request, 'submissions/create.html', {
-        'form': form,
-        'problem': problem,
-    })
+    """Deprecated: redirect to combined problem + submission page."""
+    url = reverse('problems:detail', kwargs={'slug': problem_slug})
+    from_submission_id = request.GET.get('from_submission')
+    if from_submission_id:
+        url = f"{url}?from_submission={from_submission_id}"
+    return redirect(url)
 
 
 class SubmissionListView(LoginRequiredMixin, generic.ListView):

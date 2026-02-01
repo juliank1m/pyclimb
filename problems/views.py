@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views import generic
 from .models import Problem, Tag, DIFFICULTY_CHOICES
 
@@ -72,11 +72,48 @@ class DetailView(generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        request = self.request
         
         # Show user's past submissions for this problem
-        if self.request.user.is_authenticated:
+        if request.user.is_authenticated:
             context['user_submissions'] = self.object.submissions.filter(
-                user=self.request.user
+                user=request.user
             ).order_by('-created_at')[:5]
+
+        if 'form' not in context:
+            from submissions.forms import SubmissionForm
+            initial = {}
+            from_submission_id = request.GET.get('from_submission')
+            if from_submission_id:
+                from submissions.models import Submission
+                from_submission = get_object_or_404(Submission, pk=from_submission_id)
+                if from_submission.problem_id != self.object.id:
+                    from django.http import Http404
+                    raise Http404("Submission not found")
+                if from_submission.user is not None:
+                    if not request.user.is_authenticated or from_submission.user != request.user:
+                        from django.http import Http404
+                        raise Http404("Submission not found")
+                initial['code'] = from_submission.code
+            context['form'] = SubmissionForm(problem=self.object, initial=initial)
         
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        from submissions.forms import SubmissionForm
+        form = SubmissionForm(request.POST, problem=self.object)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.problem = self.object
+            if request.user.is_authenticated:
+                submission.user = request.user
+            submission.save()
+
+            from submissions.services.judge import run_judge
+            run_judge(submission)
+
+            return redirect('submissions:detail', pk=submission.pk)
+
+        context = self.get_context_data(form=form)
+        return render(request, self.template_name, context)
