@@ -89,7 +89,7 @@ Create a `.env` file or set these environment variables:
 |----------|-------------|---------|
 | `DB_SSLMODE` | PostgreSQL SSL mode | `disable` |
 | `PYCLIMB_USE_SANDBOX` | Enable Docker sandboxing | `false` |
-| `PYCLIMB_REQUIRE_SANDBOX` | Refuse to run code without sandbox | `false` |
+| `PYCLIMB_REQUIRE_SANDBOX` | Refuse to run code without sandbox | `false` (auto-enabled when `DEBUG=false` if not explicitly set) |
 | `PYCLIMB_SANDBOX_IMAGE` | Docker image for sandbox | `pyclimb-sandbox` |
 | `PYCLIMB_SANDBOX_TIMEOUT` | Sandbox timeout (seconds) | `5` |
 | `PYCLIMB_SANDBOX_MEMORY` | Sandbox memory limit | `128m` |
@@ -200,6 +200,7 @@ sudo usermod -aG docker www-data  # or your web server user
 - CPU is limited (default 0.5 cores)
 - Filesystem is read-only except for `/tmp`
 - All Linux capabilities are dropped
+- In production (`DEBUG=false`), the app refuses to run code without the sandbox unless `PYCLIMB_REQUIRE_SANDBOX` is explicitly disabled
 
 **WARNING**: Without the sandbox enabled, code runs in a subprocess with minimal isolation. This is NOT safe for untrusted public users. See `SECURITY.md` for details.
 
@@ -403,6 +404,12 @@ tail -f /var/log/nginx/access.log
 tail -f /var/log/nginx/error.log
 ```
 
+### Sandbox health check
+```bash
+curl https://your-domain/health/sandbox/
+```
+Returns a JSON summary indicating whether sandboxing is enabled, required, and active (Docker available).
+
 ## Backup
 
 ### Database backup
@@ -425,7 +432,7 @@ Before going live:
 - [ ] HTTPS enabled (SSL certificate)
 - [ ] Database password is strong and unique
 - [ ] Sandbox enabled (`PYCLIMB_USE_SANDBOX=true`)
-- [ ] Sandbox required (`PYCLIMB_REQUIRE_SANDBOX=true`)
+- [ ] Sandbox required (`PYCLIMB_REQUIRE_SANDBOX=true` or rely on the default production behavior)
 - [ ] Firewall configured (only 80, 443 open)
 - [ ] Regular backups configured
 - [ ] Rate limiting enabled (automatic when `DEBUG=false`)
@@ -457,6 +464,7 @@ Before going live:
 - Check user is in docker group: `groups www-data`
 - Check image exists: `docker images | grep pyclimb-sandbox`
 - Check Docker socket permissions
+ - If `DEBUG=false`, set `PYCLIMB_REQUIRE_SANDBOX=false` only temporarily to unblock local testing (not recommended for production)
 
 ### "Email not sending"
 - In development, check console output for email

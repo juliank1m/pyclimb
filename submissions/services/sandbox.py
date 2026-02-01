@@ -62,6 +62,21 @@ def is_sandbox_enabled() -> bool:
            os.environ.get('PYCLIMB_USE_SANDBOX', '').lower() in ('true', '1', 'yes')
 
 
+def is_sandbox_required() -> bool:
+    """
+    Check if sandboxing is required.
+
+    Defaults to True when DEBUG is false unless explicitly disabled.
+    """
+    if hasattr(settings, 'PYCLIMB_REQUIRE_SANDBOX'):
+        return bool(getattr(settings, 'PYCLIMB_REQUIRE_SANDBOX'))
+    env_flag = os.environ.get('PYCLIMB_REQUIRE_SANDBOX')
+    if env_flag is not None and env_flag != '':
+        return env_flag.lower() in ('true', '1', 'yes')
+    debug = getattr(settings, 'DEBUG', False)
+    return not debug
+
+
 def get_sandbox_config() -> dict:
     """Get sandbox configuration from settings or environment."""
     return {
@@ -73,6 +88,20 @@ def get_sandbox_config() -> dict:
                   os.environ.get('PYCLIMB_SANDBOX_MEMORY', DEFAULT_MEMORY),
         'cpus': getattr(settings, 'PYCLIMB_SANDBOX_CPUS', None) or \
                 os.environ.get('PYCLIMB_SANDBOX_CPUS', DEFAULT_CPUS),
+    }
+
+
+def get_sandbox_status() -> dict:
+    """Return a safe status summary for health checks."""
+    enabled = is_sandbox_enabled()
+    docker_available = is_docker_available()
+    required = is_sandbox_required()
+    return {
+        'enabled': enabled,
+        'docker_available': docker_available,
+        'required': required,
+        'active': enabled and docker_available,
+        'config': get_sandbox_config(),
     }
 
 

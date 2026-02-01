@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -12,6 +13,7 @@ from accounts.models import UserProfile
 from problems.models import Problem
 from lessons.models import Course, Lesson
 from submissions.models import Submission, Verdict
+from submissions.services.sandbox import get_sandbox_status
 
 
 def home(request):
@@ -295,3 +297,8 @@ def terms_of_service(request):
 def cookie_policy(request):
     """Display cookie policy."""
     return render(request, 'legal/cookies.html')
+
+
+def sandbox_status(request):
+    """Health check for sandbox configuration."""
+    return JsonResponse(get_sandbox_status())

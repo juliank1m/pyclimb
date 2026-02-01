@@ -2,11 +2,15 @@
 
 This document describes the current security posture of PyClimb's code execution system and what changes are required before public deployment.
 
-## Current Status: MVP (Local Development Only)
+## Current Status
 
-**⚠️ WARNING: The current implementation is NOT suitable for untrusted public internet use.**
+**⚠️ WARNING: Running untrusted code without the Docker sandbox is NOT suitable for public internet use.**
 
-The judge executes arbitrary Python code on the host machine. While basic guardrails are in place, a determined attacker can escape them.
+PyClimb can execute code in two modes:
+- **Subprocess mode (default for local dev):** basic guardrails, not safe for untrusted users.
+- **Docker sandbox mode:** isolated execution designed for production use.
+
+In production (`DEBUG=false`), PyClimb **requires** sandboxing by default unless you explicitly disable `PYCLIMB_REQUIRE_SANDBOX`.
 
 ---
 
@@ -22,10 +26,11 @@ The judge executes arbitrary Python code on the host machine. While basic guardr
 | **Minimal environment** | Only `PATH`, `HOME`, `TMPDIR` passed to subprocess | ⚠️ Partial |
 | **Python isolated mode** | `-I` flag ignores `PYTHON*` env vars and user site-packages | ⚠️ Partial |
 | **No bytecode** | `PYTHONDONTWRITEBYTECODE=1` prevents `.pyc` creation | ✅ Good |
+| **Docker sandbox (optional)** | Container-per-submission with strict limits | ✅ Strong (when enabled) |
 
 ---
 
-## Known Risks (Current Implementation)
+## Known Risks (Subprocess Mode)
 
 ### 🔴 Critical
 
@@ -205,6 +210,12 @@ PyClimb now includes a Docker-based sandbox for secure code execution.
    ```python
    PYCLIMB_USE_SANDBOX = True
    ```
+
+3. **(Production) Require sandboxing** (recommended):
+   ```bash
+   export PYCLIMB_REQUIRE_SANDBOX=true
+   ```
+   When `DEBUG=false`, this is enforced by default unless explicitly disabled.
 
 ### Sandbox Security Features
 

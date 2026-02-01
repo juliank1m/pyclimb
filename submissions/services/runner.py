@@ -29,6 +29,7 @@ from .harness import get_harness_code
 from .sandbox import (
     is_sandbox_enabled,
     is_docker_available,
+    is_sandbox_required,
     run_in_sandbox,
     run_function_in_sandbox,
     SandboxResult
@@ -79,15 +80,7 @@ def _sandbox_required() -> bool:
     Require sandboxing for untrusted execution in production-like contexts.
     Defaults to requiring sandbox when DEBUG is false, unless explicitly disabled.
     """
-    if settings is not None and hasattr(settings, 'PYCLIMB_REQUIRE_SANDBOX'):
-        return bool(getattr(settings, 'PYCLIMB_REQUIRE_SANDBOX'))
-    env_flag = os.environ.get('PYCLIMB_REQUIRE_SANDBOX')
-    if env_flag is not None and env_flag != '':
-        return env_flag.lower() in ('true', '1', 'yes')
-    if settings is not None:
-        debug = getattr(settings, 'DEBUG', False)
-        return not debug
-    return False
+    return is_sandbox_required()
 
 
 @dataclass

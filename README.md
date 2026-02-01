@@ -35,13 +35,18 @@ At its current stage, PyClimb supports:
 - `TestCase` model with machine-readable inputs/outputs and human-readable display versions
 - Sample vs hidden test cases
 - Tag-based categorization and filtering
+- Difficulty, tag, and solved/unsolved filters on the problem list
 - Django Admin UI with inline test case editing
+- Function-call judge configuration (entrypoint type/name, signature text, starter code)
 
 ### Submission System
 - `Submission` model tracking code, status, verdict, and per-test-case results
 - **Code execution** via subprocess with safety guardrails
+- Optional Docker sandbox for isolated execution (configurable via env vars)
 - **Verdicts:** Accepted, Wrong Answer, Runtime Error, Time Limit Exceeded, Compilation Error
 - **Detailed feedback** showing expected vs actual output for sample tests
+- Submission history list and per-problem submission mini-history for signed-in users
+- Execution time tracking (wall-clock)
 - stdin/stdout and function-call (LeetCode-style) execution modes
 
 ### Lessons & Learning Content
@@ -59,19 +64,22 @@ At its current stage, PyClimb supports:
 - **Problem linking** - Connect lessons to practice problems
 - **Navigation** - Previous/next lesson navigation within courses
 - **Teacher Dashboard** - Staff-only interface at `/learn/teach/` for content management
+- **Markdown rendering** with code highlighting, tables, and TOC support
 
 ### User System
-- User registration with email verification
+- User registration with email verification (resend supported)
 - Login/logout authentication
 - Password reset via email
-- User profiles with statistics
-- Leaderboard with solve counts
+- User profiles with submission stats, solved breakdown, and recent activity
+- Leaderboard with weighted scoring (difficulty-based)
 
 ### User Interface
-- Problem list with difficulty and tag filtering
-- Submission form with format guidance and code template
-- Submission result page with test case breakdown
+- Homepage with featured problems, site stats, and progress prompts
+- Problem list with difficulty, tag, and solved/unsolved filtering
+- Submission form with format guidance and starter code
+- Submission result page with test case breakdown and code highlighting
 - Learning section at `/learn/` with course and lesson views
+- Legal pages: privacy policy, terms of service, cookie policy
 
 ### Infrastructure
 - PostgreSQL-backed Django project (database in Docker)
@@ -161,7 +169,9 @@ pyclimb/
 │   ├── settings.py
 │   ├── urls.py
 │   └── templates/         # Base templates
+│       └── legal/         # Privacy, terms, cookies
 ├── media/                 # User uploads (gitignored)
+├── sandbox/               # Docker sandbox image for code execution
 ├── manage.py
 ├── DEPLOYMENT.md          # Production deployment guide
 ├── SECURITY.md            # Security documentation
@@ -239,6 +249,7 @@ pyclimb/
    - Learning: http://localhost:8000/learn/
    - Teacher Dashboard: http://localhost:8000/learn/teach/ (staff only)
    - Admin: http://localhost:8000/admin/
+   - Sandbox health: http://localhost:8000/health/sandbox/
 
 ---
 
@@ -257,11 +268,11 @@ pyclimb/
 - ✅ **Lessons system with markdown editor**
 - ✅ **Teacher dashboard for content management**
 - ✅ **Image upload support for lessons**
+- ✅ **Code syntax highlighting in lessons**
 
 ### Next Up
 - [ ] Learner progress tracking (mark lessons as complete)
 - [ ] Course completion certificates
-- [ ] Code syntax highlighting in lessons
 - [ ] Search functionality
 
 ### Future

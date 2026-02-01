@@ -31,6 +31,7 @@ urlpatterns = [
     path('privacy/', views.privacy_policy, name='privacy_policy'),
     path('terms/', views.terms_of_service, name='terms_of_service'),
     path('cookies/', views.cookie_policy, name='cookie_policy'),
+    path('health/sandbox/', views.sandbox_status, name='sandbox_status'),
     path('admin/', admin.site.urls),
     
     # Authentication
