@@ -212,6 +212,9 @@ PYCLIMB_SANDBOX_IMAGE = os.environ.get('PYCLIMB_SANDBOX_IMAGE', 'pyclimb-sandbox
 PYCLIMB_SANDBOX_TIMEOUT = int(os.environ.get('PYCLIMB_SANDBOX_TIMEOUT', '5'))
 PYCLIMB_SANDBOX_MEMORY = os.environ.get('PYCLIMB_SANDBOX_MEMORY', '128m')
 PYCLIMB_SANDBOX_CPUS = os.environ.get('PYCLIMB_SANDBOX_CPUS', '0.5')
+# Remote judge configuration (for platforms where local Docker is unavailable)
+PYCLIMB_REMOTE_JUDGE_URL = os.environ.get('PYCLIMB_REMOTE_JUDGE_URL', '')
+PYCLIMB_REMOTE_JUDGE_TOKEN = os.environ.get('PYCLIMB_REMOTE_JUDGE_TOKEN', '')
 
 # =============================================================================
 # Production Settings

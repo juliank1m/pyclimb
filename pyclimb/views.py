@@ -14,6 +14,7 @@ from problems.models import Problem
 from lessons.models import Course, Lesson
 from submissions.models import Submission, Verdict
 from submissions.services.sandbox import get_sandbox_status
+from submissions.services.runner import get_secure_execution_status
 
 
 def home(request):
@@ -301,4 +302,7 @@ def cookie_policy(request):
 
 def sandbox_status(request):
     """Health check for sandbox configuration."""
-    return JsonResponse(get_sandbox_status())
+    return JsonResponse({
+        'docker_sandbox': get_sandbox_status(),
+        'secure_execution': get_secure_execution_status(),
+    })

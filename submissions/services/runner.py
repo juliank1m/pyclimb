@@ -21,9 +21,14 @@ import subprocess
 import sys
 import tempfile
 import time
+import socket
+import hmac
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 from .harness import get_harness_code
 from .sandbox import (
@@ -75,12 +80,164 @@ def _check_sandbox_mode() -> bool:
     return _docker_available
 
 
+def _get_remote_judge_url() -> str:
+    if settings is not None:
+        configured = getattr(settings, 'PYCLIMB_REMOTE_JUDGE_URL', '')
+        if configured:
+            return configured
+    return os.environ.get('PYCLIMB_REMOTE_JUDGE_URL', '')
+
+
+def _get_remote_judge_token() -> str:
+    if settings is not None:
+        configured = getattr(settings, 'PYCLIMB_REMOTE_JUDGE_TOKEN', '')
+        if configured:
+            return configured
+    return os.environ.get('PYCLIMB_REMOTE_JUDGE_TOKEN', '')
+
+
+def _check_remote_sandbox_mode() -> bool:
+    """Remote judge mode is considered active only with URL + auth token."""
+    return bool(_get_remote_judge_url() and _get_remote_judge_token())
+
+
 def _sandbox_required() -> bool:
     """
     Require sandboxing for untrusted execution in production-like contexts.
     Defaults to requiring sandbox when DEBUG is false, unless explicitly disabled.
     """
     return is_sandbox_required()
+
+
+def get_secure_execution_status() -> dict:
+    """
+    Summarize whether secure execution is currently available.
+
+    A secure backend is either:
+    - local Docker sandbox mode, or
+    - remote judge mode (authenticated API).
+    """
+    local_active = _check_sandbox_mode()
+    remote_active = _check_remote_sandbox_mode()
+    required = _sandbox_required()
+
+    reason = ''
+    if required and not (local_active or remote_active):
+        if _get_remote_judge_url() and not _get_remote_judge_token():
+            reason = (
+                'Secure sandboxed execution is required, but '
+                'PYCLIMB_REMOTE_JUDGE_TOKEN is missing.'
+            )
+        else:
+            reason = (
+                'Secure sandboxed execution is required, but no secure '
+                'execution backend is configured.'
+            )
+
+    return {
+        'required': required,
+        'local_active': local_active,
+        'remote_active': remote_active,
+        'active': local_active or remote_active,
+        'reason': reason,
+    }
+
+
+def _sandbox_required_message() -> str:
+    status = get_secure_execution_status()
+    return status['reason'] or 'Sandboxing is required for code execution.'
+
+
+def _sign_remote_payload(timestamp: str, body: bytes, token: str) -> str:
+    payload = timestamp.encode('utf-8') + b'.' + body
+    digest = hmac.new(token.encode('utf-8'), payload, hashlib.sha256).hexdigest()
+    return f'sha256={digest}'
+
+
+def _run_in_remote_sandbox(payload: dict, timeout: int) -> SandboxResult:
+    """
+    Execute code via remote sandbox API.
+
+    Expected response JSON keys:
+    - stdout (str)
+    - stderr (str)
+    - exit_code (int)
+    - timed_out (bool)
+    - error (optional str)
+    """
+    url = _get_remote_judge_url().rstrip('/') + '/execute'
+    token = _get_remote_judge_token()
+
+    body = json.dumps(payload).encode('utf-8')
+    timestamp = str(int(time.time()))
+    signature = _sign_remote_payload(timestamp, body, token)
+
+    req = urllib_request.Request(
+        url=url,
+        data=body,
+        method='POST',
+        headers={
+            'Content-Type': 'application/json',
+            'X-PyClimb-Timestamp': timestamp,
+            'X-PyClimb-Signature': signature,
+        },
+    )
+
+    try:
+        with urllib_request.urlopen(req, timeout=timeout + 3) as response:
+            raw = response.read()
+    except urllib_error.HTTPError as e:
+        error_body = e.read().decode('utf-8', errors='replace')[:500]
+        return SandboxResult(
+            stdout='',
+            stderr='',
+            exit_code=-1,
+            timed_out=False,
+            error=f'Remote judge HTTP {e.code}: {error_body}',
+        )
+    except urllib_error.URLError as e:
+        return SandboxResult(
+            stdout='',
+            stderr='',
+            exit_code=-1,
+            timed_out=isinstance(getattr(e, 'reason', None), socket.timeout),
+            error=f'Remote judge unavailable: {str(e.reason)}',
+        )
+    except socket.timeout:
+        return SandboxResult(
+            stdout='',
+            stderr='',
+            exit_code=-1,
+            timed_out=True,
+            error='Remote judge timed out.',
+        )
+    except Exception as e:
+        return SandboxResult(
+            stdout='',
+            stderr='',
+            exit_code=-1,
+            timed_out=False,
+            error=f'Remote judge request failed: {str(e)}',
+        )
+
+    try:
+        data = json.loads(raw.decode('utf-8'))
+    except Exception:
+        return SandboxResult(
+            stdout='',
+            stderr='',
+            exit_code=-1,
+            timed_out=False,
+            error='Remote judge returned invalid JSON.',
+        )
+
+    return SandboxResult(
+        stdout=str(data.get('stdout', ''))[:MAX_OUTPUT_BYTES],
+        stderr=str(data.get('stderr', ''))[:MAX_OUTPUT_BYTES],
+        exit_code=int(data.get('exit_code', -1)),
+        timed_out=bool(data.get('timed_out', False)),
+        error=data.get('error'),
+    )
 
 
 @dataclass
@@ -141,10 +298,31 @@ def run_python_code(code: str, stdin_input: str, timeout: float = DEFAULT_TIMEOU
             elapsed_ms=elapsed_ms,
             error=sandbox_result.error
         )
+    if _check_remote_sandbox_mode():
+        start_time = time.perf_counter()
+        sandbox_result = _run_in_remote_sandbox(
+            payload={
+                'mode': 'stdin',
+                'language': 'python',
+                'code': code,
+                'stdin_input': stdin_input,
+                'timeout': int(timeout),
+            },
+            timeout=int(timeout),
+        )
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+        return RunResult(
+            stdout=sandbox_result.stdout,
+            stderr=sandbox_result.stderr,
+            exit_code=sandbox_result.exit_code,
+            timed_out=sandbox_result.timed_out,
+            elapsed_ms=elapsed_ms,
+            error=sandbox_result.error,
+        )
     if _sandbox_required():
         return RunResult(
             stdout='',
-            stderr='Sandboxing is required for code execution.',
+            stderr=_sandbox_required_message(),
             exit_code=-1,
             timed_out=False,
             elapsed_ms=0,
@@ -344,12 +522,94 @@ def run_function_call(
                 elapsed_ms=elapsed_ms
             )
 
+    if _check_remote_sandbox_mode():
+        start_time = time.perf_counter()
+        sandbox_result = _run_in_remote_sandbox(
+            payload={
+                'mode': 'function',
+                'language': 'python',
+                'code': code,
+                'harness_code': harness_code,
+                'args_json': args_json,
+                'timeout': int(timeout),
+            },
+            timeout=int(timeout),
+        )
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+
+        if sandbox_result.timed_out:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='timeout',
+                error_message='Time limit exceeded',
+                traceback='',
+                timed_out=True,
+                elapsed_ms=elapsed_ms
+            )
+
+        if sandbox_result.error:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='internal',
+                error_message=sandbox_result.error,
+                traceback='',
+                timed_out=False,
+                elapsed_ms=elapsed_ms
+            )
+
+        stdout = sandbox_result.stdout.strip()
+        if not stdout:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='internal',
+                error_message='Harness produced no output',
+                traceback=sandbox_result.stderr[:MAX_OUTPUT_BYTES],
+                timed_out=False,
+                elapsed_ms=elapsed_ms
+            )
+
+        try:
+            output = json.loads(stdout)
+        except json.JSONDecodeError:
+            return FunctionCallResult(
+                success=False,
+                result=None,
+                error_type='internal',
+                error_message=f'Harness output not valid JSON: {stdout[:200]}',
+                traceback=sandbox_result.stderr[:MAX_OUTPUT_BYTES],
+                timed_out=False,
+                elapsed_ms=elapsed_ms
+            )
+
+        if output.get('ok'):
+            return FunctionCallResult(
+                success=True,
+                result=output['result'],
+                error_type=None,
+                error_message='',
+                traceback='',
+                timed_out=False,
+                elapsed_ms=elapsed_ms
+            )
+        return FunctionCallResult(
+            success=False,
+            result=None,
+            error_type=output.get('error', 'unknown'),
+            error_message=output.get('message', 'Unknown error'),
+            traceback=output.get('traceback', ''),
+            timed_out=False,
+            elapsed_ms=elapsed_ms
+        )
+
     if _sandbox_required():
         return FunctionCallResult(
             success=False,
             result=None,
             error_type='internal',
-            error_message='Sandboxing is required for code execution.',
+            error_message=_sandbox_required_message(),
             traceback='',
             timed_out=False,
             elapsed_ms=0

@@ -8,6 +8,7 @@ Focuses on:
 """
 import pytest
 from django.test import TestCase, Client
+from django.test import override_settings
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -182,3 +183,24 @@ class AuthViewTests(TestCase):
         # Django auth view doesn't redirect by default, but register does
         response = self.client.get(reverse('register'))
         self.assertEqual(response.status_code, 302)
+
+
+@pytest.mark.django_db
+class SubmissionBannerTests(TestCase):
+    """Tests for submission availability banner behavior."""
+
+    def setUp(self):
+        self.client = Client()
+
+    @override_settings(
+        SUBMISSIONS_ENABLED=True,
+        PYCLIMB_REQUIRE_SANDBOX=True,
+        PYCLIMB_USE_SANDBOX=False,
+    )
+    def test_banner_shows_sandbox_requirement_message(self):
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'Submissions disabled:')
+        self.assertContains(
+            response,
+            'Secure sandboxed execution is required for this deployment'
+        )

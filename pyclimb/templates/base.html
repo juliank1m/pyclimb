@@ -362,7 +362,11 @@
     {% if not submissions_enabled %}
       <div class="submission-banner" role="status" aria-live="polite">
         <strong>Submissions disabled:</strong>
-        This deployment is running in read-only mode for safety. Code execution is not available here.
+        {% if submissions_disabled_reason %}
+          {{ submissions_disabled_reason }}
+        {% else %}
+          This deployment is running in read-only mode for safety. Code execution is not available here.
+        {% endif %}
       </div>
     {% endif %}
 

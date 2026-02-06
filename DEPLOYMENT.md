@@ -94,6 +94,8 @@ Create a `.env` file or set these environment variables:
 | `PYCLIMB_SANDBOX_TIMEOUT` | Sandbox timeout (seconds) | `5` |
 | `PYCLIMB_SANDBOX_MEMORY` | Sandbox memory limit | `128m` |
 | `PYCLIMB_SANDBOX_CPUS` | Sandbox CPU limit | `0.5` |
+| `PYCLIMB_REMOTE_JUDGE_URL` | Remote secure judge API base URL | `` |
+| `PYCLIMB_REMOTE_JUDGE_TOKEN` | Shared secret for signed judge requests | `` |
 
 ### Email Configuration (for password reset)
 
@@ -203,6 +205,51 @@ sudo usermod -aG docker www-data  # or your web server user
 - In production (`DEBUG=false`), the app refuses to run code without the sandbox unless `PYCLIMB_REQUIRE_SANDBOX` is explicitly disabled
 
 **WARNING**: Without the sandbox enabled, code runs in a subprocess with minimal isolation. This is NOT safe for untrusted public users. See `SECURITY.md` for details.
+
+## Railway + Remote Judge Setup (Recommended on Railway)
+
+Railway services cannot reliably host the Docker socket needed for container-per-submission execution.  
+Use Railway for Django + DB, and run sandbox execution on a separate isolated service.
+
+### 1. Configure Railway app environment
+
+Set these variables on your Railway web service:
+
+```bash
+SUBMISSIONS_ENABLED=true
+PYCLIMB_REQUIRE_SANDBOX=true
+PYCLIMB_REMOTE_JUDGE_URL=https://your-judge.example.com
+PYCLIMB_REMOTE_JUDGE_TOKEN=<long-random-shared-secret>
+```
+
+### 2. Deploy a remote judge service
+
+Your judge service should expose:
+
+`POST /execute` with JSON body:
+- `mode`: `"stdin"` or `"function"`
+- `language`: `"python"`
+- `code`: submission code
+- `stdin_input`: for stdin mode
+- `harness_code`: for function mode
+- `args_json`: for function mode
+- `timeout`: seconds
+
+Response JSON:
+- `stdout` (string)
+- `stderr` (string)
+- `exit_code` (int)
+- `timed_out` (bool)
+- `error` (optional string)
+
+### 3. Verify request signing in judge service
+
+PyClimb signs every request with:
+- `X-PyClimb-Timestamp`
+- `X-PyClimb-Signature` (format `sha256=<hex>`)
+
+Judge should verify:
+`hmac_sha256(token, timestamp + "." + raw_request_body)`.
 
 ## Running with Gunicorn
 

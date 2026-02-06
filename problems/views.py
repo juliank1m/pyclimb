@@ -106,6 +106,19 @@ class DetailView(generic.DetailView):
         if not getattr(settings, 'SUBMISSIONS_ENABLED', True):
             messages.error(request, 'Submissions are disabled in this environment.')
             return redirect('problems:detail', slug=self.object.slug)
+
+        from submissions.services.runner import get_secure_execution_status
+        secure_status = get_secure_execution_status()
+        if secure_status['required'] and not secure_status['active']:
+            messages.error(
+                request,
+                secure_status['reason'] or (
+                    'Submissions are disabled because secure sandboxed '
+                    'execution is not available on this deployment.'
+                )
+            )
+            return redirect('problems:detail', slug=self.object.slug)
+
         from submissions.forms import SubmissionForm
         form = SubmissionForm(request.POST, problem=self.object)
         if form.is_valid():

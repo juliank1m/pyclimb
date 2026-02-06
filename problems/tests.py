@@ -10,8 +10,11 @@ from django.core.exceptions import ValidationError
 from django.template.defaultfilters import slugify
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.test import override_settings
+from unittest.mock import patch
 
 from problems.models import Problem, TestCase as ProblemTestCase, Tag, JudgeMode
+from submissions.models import Submission
 
 
 class ProblemModelTests(TestCase):
@@ -235,3 +238,45 @@ class ProblemViewTests(TestCase):
         response = self.client.get(reverse('problems:index') + f'?tag={tag.slug}')
         self.assertContains(response, 'Test Problem')
         self.assertNotContains(response, 'Other Problem')
+
+
+class SubmissionGuardTests(TestCase):
+    """Safety guard tests for submission entrypoint."""
+
+    def setUp(self):
+        self.client = Client()
+        self.problem = Problem.objects.create(
+            title='Guarded Problem',
+            slug='guarded-problem',
+            description='A test problem',
+            difficulty=1,
+            is_published=True,
+        )
+
+    @override_settings(SUBMISSIONS_ENABLED=True, PYCLIMB_REQUIRE_SANDBOX=True)
+    @patch(
+        'submissions.services.runner.get_secure_execution_status',
+        return_value={'required': True, 'active': False, 'reason': 'No secure backend.'}
+    )
+    def test_post_blocks_when_required_sandbox_inactive(self, _mock_status):
+        response = self.client.post(
+            reverse('problems:detail', kwargs={'slug': self.problem.slug}),
+            data={'code': 'print("hi")'},
+            follow=True,
+        )
+        self.assertEqual(Submission.objects.count(), 0)
+        self.assertContains(response, 'No secure backend.')
+
+    @override_settings(SUBMISSIONS_ENABLED=True, PYCLIMB_REQUIRE_SANDBOX=True)
+    @patch(
+        'submissions.services.runner.get_secure_execution_status',
+        return_value={'required': True, 'active': True, 'reason': ''}
+    )
+    @patch('submissions.services.judge.run_judge')
+    def test_post_creates_submission_when_sandbox_active(self, _mock_run_judge, _mock_status):
+        response = self.client.post(
+            reverse('problems:detail', kwargs={'slug': self.problem.slug}),
+            data={'code': 'print("hi")'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Submission.objects.count(), 1)
