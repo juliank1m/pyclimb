@@ -280,3 +280,13 @@ class SubmissionGuardTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Submission.objects.count(), 1)
+
+    @override_settings(SUBMISSIONS_ENABLED=True)
+    def test_anonymous_post_redirects_to_login(self):
+        response = self.client.post(
+            reverse('problems:detail', kwargs={'slug': self.problem.slug}),
+            data={'code': 'print("hi")'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('login'), response.url)
+        self.assertEqual(Submission.objects.count(), 0)

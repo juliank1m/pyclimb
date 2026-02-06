@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib import messages
 from django.views import generic
+from django.urls import reverse
 from .models import Problem, Tag, DIFFICULTY_CHOICES
 
 
@@ -103,6 +104,11 @@ class DetailView(generic.DetailView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in to submit a solution.')
+            login_url = reverse('login')
+            return redirect(f"{login_url}?next={request.path}")
+
         if not getattr(settings, 'SUBMISSIONS_ENABLED', True):
             messages.error(request, 'Submissions are disabled in this environment.')
             return redirect('problems:detail', slug=self.object.slug)

@@ -323,6 +323,18 @@ textarea#id_code:focus {
 .format-guide li {
   margin-bottom: 4px;
 }
+.auth-required {
+  margin: 0;
+  padding: 16px;
+  background: #f8f6f0;
+  border: 1px solid #efe7d7;
+  border-radius: 10px;
+  color: var(--ink);
+}
+.auth-required p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
 .draft-controls {
   display: flex;
   justify-content: space-between;
@@ -529,26 +541,33 @@ textarea#id_code:focus {
         </div>
       {% endif %}
 
-      {% if form.errors %}
-        <ul class="error-list">
-          {% for field in form %}
-            {% for error in field.errors %}
-              <li>{{ error }}</li>
+      {% if user.is_authenticated %}
+        {% if form.errors %}
+          <ul class="error-list">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
-        </ul>
+          </ul>
+        {% endif %}
+
+        <div class="draft-controls">
+          <span id="draft-status" class="draft-status"></span>
+          <button type="button" id="clear-draft" class="btn-secondary" style="display: none;">Clear Draft</button>
+        </div>
+
+        <form method="post" id="submit-form">
+          {% csrf_token %}
+          {{ form.code }}
+          <button type="submit" class="btn" style="margin-top: 16px;">Submit</button>
+        </form>
+      {% else %}
+        <div class="auth-required">
+          <p>You must be logged in to submit solutions and track your progress.</p>
+          <a class="btn" href="{% url 'login' %}?next={{ request.path }}">Log In to Submit</a>
+        </div>
       {% endif %}
-
-      <div class="draft-controls">
-        <span id="draft-status" class="draft-status"></span>
-        <button type="button" id="clear-draft" class="btn-secondary" style="display: none;">Clear Draft</button>
-      </div>
-
-      <form method="post" id="submit-form">
-        {% csrf_token %}
-        {{ form.code }}
-        <button type="submit" class="btn" style="margin-top: 16px;">Submit</button>
-      </form>
     </section>
   </aside>
 </div>
