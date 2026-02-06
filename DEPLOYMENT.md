@@ -224,6 +224,9 @@ PYCLIMB_REMOTE_JUDGE_TOKEN=<long-random-shared-secret>
 
 ### 2. Deploy a remote judge service
 
+Reference implementation (Modal judge service):
+`https://github.com/juliank1m/pyclimb-modal-judge`
+
 Your judge service should expose:
 
 `POST /execute` with JSON body:
@@ -250,6 +253,21 @@ PyClimb signs every request with:
 
 Judge should verify:
 `hmac_sha256(token, timestamp + "." + raw_request_body)`.
+
+### 4. Verify secure execution health
+
+After deploy:
+
+```bash
+curl https://your-domain/health/sandbox/
+```
+
+Expected fields:
+- `docker_sandbox`: status of local Docker sandbox integration
+- `secure_execution`: effective execution backend status used by judge logic
+
+For Railway + remote judge, `secure_execution.active` should be `true` even if
+`docker_sandbox.active` is `false`.
 
 ## Running with Gunicorn
 
@@ -455,7 +473,9 @@ tail -f /var/log/nginx/error.log
 ```bash
 curl https://your-domain/health/sandbox/
 ```
-Returns a JSON summary indicating whether sandboxing is enabled, required, and active (Docker available).
+Returns JSON with:
+- `docker_sandbox` (local Docker status)
+- `secure_execution` (effective backend status: Docker or remote judge)
 
 ## Backup
 
@@ -478,7 +498,9 @@ Before going live:
 - [ ] `ALLOWED_HOSTS` configured correctly
 - [ ] HTTPS enabled (SSL certificate)
 - [ ] Database password is strong and unique
-- [ ] Sandbox enabled (`PYCLIMB_USE_SANDBOX=true`)
+- [ ] Secure execution backend enabled:
+  - Docker sandbox (`PYCLIMB_USE_SANDBOX=true`), or
+  - Remote judge (`PYCLIMB_REMOTE_JUDGE_URL` + `PYCLIMB_REMOTE_JUDGE_TOKEN`)
 - [ ] Sandbox required (`PYCLIMB_REQUIRE_SANDBOX=true` or rely on the default production behavior)
 - [ ] Firewall configured (only 80, 443 open)
 - [ ] Regular backups configured
@@ -488,7 +510,7 @@ Before going live:
 
 1. **Code Execution**: Even with sandboxing, running untrusted code carries risks. Monitor for abuse.
 
-2. **Execution Time**: Displayed times are wall-clock time and include Docker overhead. They are approximate.
+2. **Judge Time**: Displayed judge time is wall-clock and includes overhead (network, remote worker startup, and sandbox orchestration). It is approximate.
 
 3. **Single Server**: This guide covers single-server deployment. For high availability, consider load balancing and database replication.
 
@@ -511,7 +533,13 @@ Before going live:
 - Check user is in docker group: `groups www-data`
 - Check image exists: `docker images | grep pyclimb-sandbox`
 - Check Docker socket permissions
- - If `DEBUG=false`, set `PYCLIMB_REQUIRE_SANDBOX=false` only temporarily to unblock local testing (not recommended for production)
+- If `DEBUG=false`, set `PYCLIMB_REQUIRE_SANDBOX=false` only temporarily to unblock local testing (not recommended for production)
+
+### "Remote judge not working"
+- Confirm `PYCLIMB_REMOTE_JUDGE_URL` and `PYCLIMB_REMOTE_JUDGE_TOKEN` are set on the web service
+- Check `/health/sandbox/` and inspect `secure_execution.reason`
+- If you see HTTP 401 errors, verify the shared secret matches between app and judge service
+- Ensure remote judge exposes `POST /execute` and returns valid JSON (`stdout`, `stderr`, `exit_code`, `timed_out`, optional `error`)
 
 ### "Email not sending"
 - In development, check console output for email

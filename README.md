@@ -42,11 +42,14 @@ At its current stage, PyClimb supports:
 ### Submission System
 - `Submission` model tracking code, status, verdict, and per-test-case results
 - **Code execution** via subprocess with safety guardrails
-- Optional Docker sandbox for isolated execution (configurable via env vars)
+- Secure execution via either:
+  - local Docker sandbox, or
+  - remote judge service (recommended for Railway)
 - **Verdicts:** Accepted, Wrong Answer, Runtime Error, Time Limit Exceeded, Compilation Error
 - **Detailed feedback** showing expected vs actual output for sample tests
 - Submission history list and per-problem submission mini-history for signed-in users
-- Execution time tracking (wall-clock)
+- Login required to submit solutions
+- Judge time tracking (wall-clock, includes judge/transport overhead)
 - stdin/stdout and function-call (LeetCode-style) execution modes
 
 ### Lessons & Learning Content
@@ -91,14 +94,16 @@ At its current stage, PyClimb supports:
 
 ## Security Notice
 
-⚠️ **The current code execution system is for local development only.**
+⚠️ **Running code without a secure execution backend is not safe for public deployment.**
 
 The judge runs user-submitted Python code with basic safeguards (subprocess isolation, timeouts, output limits), but **lacks full sandboxing**. A malicious user could:
 - Read files from the host system
 - Make network connections
 - Exhaust system resources
 
-**Do not deploy to the public internet without implementing container isolation.**
+Use one of these before public deployment:
+- Local Docker sandbox (`PYCLIMB_USE_SANDBOX=true`)
+- Remote judge service (`PYCLIMB_REMOTE_JUDGE_URL` + `PYCLIMB_REMOTE_JUDGE_TOKEN`)
 
 See **[SECURITY.md](SECURITY.md)** for:
 - Current safeguards and their limitations
@@ -147,8 +152,8 @@ pyclimb/
 │   ├── views.py           # Create and detail views
 │   ├── services/          # Judge logic
 │   │   ├── judge.py       # Main judge orchestration
-│   │   ├── runner.py      # Subprocess execution
-│   │   ├── sandbox.py     # Docker sandbox
+│   │   ├── runner.py      # Subprocess + remote judge execution routing
+│   │   ├── sandbox.py     # Local Docker sandbox integration
 │   │   └── normalize.py   # Output comparison
 │   └── templates/
 ├── lessons/               # Learning content app
@@ -249,7 +254,7 @@ pyclimb/
    - Learning: http://localhost:8000/learn/
    - Teacher Dashboard: http://localhost:8000/learn/teach/ (staff only)
    - Admin: http://localhost:8000/admin/
-   - Sandbox health: http://localhost:8000/health/sandbox/
+   - Sandbox/secure execution health: http://localhost:8000/health/sandbox/
 
 ---
 
@@ -264,6 +269,7 @@ pyclimb/
 - ✅ Leaderboard and user statistics
 - ✅ Rate limiting
 - ✅ Docker sandbox for secure code execution
+- ✅ Remote judge execution backend (for Railway deployments)
 - ✅ Function-call (LeetCode-style) judge mode
 - ✅ **Lessons system with markdown editor**
 - ✅ **Teacher dashboard for content management**
@@ -294,8 +300,7 @@ This project is licensed under the **MIT License**.
 This repository reflects an **in-progress learning project**.  
 Design decisions may evolve as new concepts are explored and refined.
 
-### Branch Notes (prod-safe)
+### Remote Judge Reference
 
-The `prod-safe` branch is intended for production deployments that **disable code submissions by default** for safety.  
-It adds a UI banner and a server-side guard that blocks submissions unless `SUBMISSIONS_ENABLED=true` is set.  
-Main branch remains the full product experience with submissions enabled in development.
+Modal judge service repository:
+`https://github.com/juliank1m/pyclimb-modal-judge`

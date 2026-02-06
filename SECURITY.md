@@ -4,13 +4,14 @@ This document describes the current security posture of PyClimb's code execution
 
 ## Current Status
 
-**⚠️ WARNING: Running untrusted code without the Docker sandbox is NOT suitable for public internet use.**
+**⚠️ WARNING: Running untrusted code without a secure execution backend is NOT suitable for public internet use.**
 
-PyClimb can execute code in two modes:
+PyClimb can execute code in three modes:
 - **Subprocess mode (default for local dev):** basic guardrails, not safe for untrusted users.
-- **Docker sandbox mode:** isolated execution designed for production use.
+- **Docker sandbox mode:** isolated execution designed for production use on hosts with Docker access.
+- **Remote judge mode:** signed API calls to an external isolated judge service (recommended for Railway).
 
-In production (`DEBUG=false`), PyClimb **requires** sandboxing by default unless you explicitly disable `PYCLIMB_REQUIRE_SANDBOX`.
+In production (`DEBUG=false`), PyClimb **requires** secure execution by default unless you explicitly disable `PYCLIMB_REQUIRE_SANDBOX`.
 
 ---
 
@@ -27,6 +28,7 @@ In production (`DEBUG=false`), PyClimb **requires** sandboxing by default unless
 | **Python isolated mode** | `-I` flag ignores `PYTHON*` env vars and user site-packages | ⚠️ Partial |
 | **No bytecode** | `PYTHONDONTWRITEBYTECODE=1` prevents `.pyc` creation | ✅ Good |
 | **Docker sandbox (optional)** | Container-per-submission with strict limits | ✅ Strong (when enabled) |
+| **Remote judge (optional)** | Signed request to isolated execution service | ✅ Strong (when properly configured) |
 
 ---
 
@@ -77,7 +79,7 @@ x = 'A' * (10 ** 10)
 
 Before deploying PyClimb to the public internet, implement **at least one** of these isolation strategies:
 
-### Option 1: Container-per-Submission (Recommended)
+### Option 1: Container-per-Submission (Recommended for Docker-capable hosts)
 
 Run each submission in a disposable Docker container:
 
@@ -137,7 +139,15 @@ Run the judge on a separate, isolated server:
 - Code runs in ephemeral VMs or containers
 - Network isolated via firewall rules
 
-### Option 3: Firejail/Bubblewrap Sandbox
+### Option 3: Remote Judge Service (Recommended on Railway)
+
+Use an external judge API that:
+- verifies HMAC-signed requests (`X-PyClimb-Timestamp`, `X-PyClimb-Signature`)
+- executes code in isolated sandboxes or containers
+- enforces CPU/memory/time limits
+- returns structured execution output (`stdout`, `stderr`, `exit_code`, `timed_out`)
+
+### Option 4: Firejail/Bubblewrap Sandbox
 
 Use Linux sandboxing tools for lighter-weight isolation:
 
@@ -178,6 +188,7 @@ bwrap --unshare-net --unshare-pid --die-with-parent \
 - [x] Resource limits via Docker (`--memory`, `--cpus`, `--pids-limit`)
 - [x] Dropped capabilities (`--cap-drop ALL`)
 - [x] No privilege escalation (`--security-opt no-new-privileges`)
+- [x] Remote judge integration via signed API requests
 - **Suitable for:** Public deployment (when enabled)
 
 ### Phase 4: Production Hardening
@@ -189,9 +200,11 @@ bwrap --unshare-net --unshare-pid --die-with-parent \
 
 ---
 
-## Docker Sandbox (Phase 3)
+## Secure Execution Backends (Phase 3)
 
-PyClimb now includes a Docker-based sandbox for secure code execution.
+PyClimb includes both:
+- a Docker-based local sandbox
+- a remote judge integration via signed API requests
 
 ### Enabling the Sandbox
 
@@ -242,6 +255,8 @@ PyClimb now includes a Docker-based sandbox for secure code execution.
 | `PYCLIMB_SANDBOX_TIMEOUT` | `5` | Execution timeout (seconds) |
 | `PYCLIMB_SANDBOX_MEMORY` | `128m` | Memory limit |
 | `PYCLIMB_SANDBOX_CPUS` | `0.5` | CPU limit |
+| `PYCLIMB_REMOTE_JUDGE_URL` | `` | Remote judge base URL (e.g. `https://judge.example.com`) |
+| `PYCLIMB_REMOTE_JUDGE_TOKEN` | `` | Shared secret for HMAC request signing |
 
 ### Testing the Sandbox
 
@@ -259,9 +274,12 @@ echo 'open("/evil.txt", "w").write("pwned")' | \
 
 ### Fallback Behavior
 
-If Docker is unavailable or sandbox mode is disabled, the runner uses the original
-subprocess-based execution unless sandboxing is required (see `PYCLIMB_REQUIRE_SANDBOX`),
-in which case execution is refused.
+The runner selects execution backend in this order:
+1. Docker sandbox (if enabled and available)
+2. Remote judge (if URL + token are configured)
+3. Subprocess fallback (only when secure execution is not required)
+
+If secure execution is required and no secure backend is active, execution is refused.
 
 ---
 
@@ -294,7 +312,7 @@ If you suspect a security breach:
 
 ## Summary
 
-| Deployment Scenario | Without Sandbox | With Sandbox Enabled |
+| Deployment Scenario | Without Secure Backend | With Secure Backend Enabled |
 |---------------------|-----------------|----------------------|
 | Local development (just you) | ✅ Acceptable | ✅ Acceptable |
 | Private LAN (trusted users) | ⚠️ Risky | ✅ Safe |
@@ -303,6 +321,8 @@ If you suspect a security breach:
 
 **Bottom line:** 
 - For local development, sandbox mode is optional.
-- For any deployment with untrusted users, **enable sandbox mode** (`PYCLIMB_USE_SANDBOX=true`)
-  and consider requiring it (`PYCLIMB_REQUIRE_SANDBOX=true`) to prevent unsandboxed fallback.
+- For any deployment with untrusted users, enable a secure backend:
+  - Docker sandbox (`PYCLIMB_USE_SANDBOX=true`), or
+  - Remote judge (`PYCLIMB_REMOTE_JUDGE_URL` + `PYCLIMB_REMOTE_JUDGE_TOKEN`)
+  and require secure execution (`PYCLIMB_REQUIRE_SANDBOX=true`) to prevent unsandboxed fallback.
 - For public internet deployment, also implement Phase 4 (rate limiting, queues, monitoring).
