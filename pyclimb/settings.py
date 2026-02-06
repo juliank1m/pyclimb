@@ -32,6 +32,17 @@ DEBUG = os.environ.get('DEBUG', 'true').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = []
 
+def _parse_csv_env(name):
+    """Parse a comma-separated environment variable into a trimmed list."""
+    return [item.strip() for item in os.environ.get(name, '').split(',') if item.strip()]
+
+# Optional iframe embedding controls.
+# Example:
+# PYCLIMB_IFRAME_ALLOWED_ORIGINS=https://www.juliankim.dev
+# PYCLIMB_IFRAME_ALLOWED_PATH_PREFIXES=/,/problems/
+PYCLIMB_IFRAME_ALLOWED_ORIGINS = _parse_csv_env('PYCLIMB_IFRAME_ALLOWED_ORIGINS')
+PYCLIMB_IFRAME_ALLOWED_PATH_PREFIXES = _parse_csv_env('PYCLIMB_IFRAME_ALLOWED_PATH_PREFIXES')
+
 
 # Application definition
 
@@ -56,6 +67,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'pyclimb.middleware.FrameAncestorsMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'pyclimb.middleware.RateLimitMiddleware',
 ]

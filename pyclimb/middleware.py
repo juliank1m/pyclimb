@@ -13,6 +13,46 @@ class HttpResponseTooManyRequests(HttpResponse):
     status_code = 429
 
 
+class FrameAncestorsMiddleware:
+    """
+    Allow iframe embedding for selected paths and trusted parent origins.
+
+    Controlled by settings:
+    - PYCLIMB_IFRAME_ALLOWED_ORIGINS: list of allowed origins
+    - PYCLIMB_IFRAME_ALLOWED_PATH_PREFIXES: list of path prefixes to allow
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.allowed_origins = tuple(getattr(settings, 'PYCLIMB_IFRAME_ALLOWED_ORIGINS', []))
+        self.allowed_path_prefixes = tuple(getattr(settings, 'PYCLIMB_IFRAME_ALLOWED_PATH_PREFIXES', []))
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        if not self.allowed_origins or not self.allowed_path_prefixes:
+            return response
+
+        if not any(request.path.startswith(prefix) for prefix in self.allowed_path_prefixes):
+            return response
+
+        # X-Frame-Options cannot safely allow specific external origins; use CSP frame-ancestors instead.
+        response.headers.pop('X-Frame-Options', None)
+
+        frame_ancestors = " ".join(["'self'", *self.allowed_origins])
+        frame_ancestors_directive = f"frame-ancestors {frame_ancestors}"
+        existing_csp = response.headers.get('Content-Security-Policy', '').strip()
+        if not existing_csp:
+            response.headers['Content-Security-Policy'] = frame_ancestors_directive
+            return response
+
+        if 'frame-ancestors' in existing_csp.lower():
+            return response
+
+        response.headers['Content-Security-Policy'] = f"{existing_csp}; {frame_ancestors_directive}"
+        return response
+
+
 class RateLimitMiddleware:
     """
     Rate limiting middleware for submission endpoints.
