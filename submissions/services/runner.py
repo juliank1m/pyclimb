@@ -49,6 +49,7 @@ except Exception:  # pragma: no cover - safety for non-Django contexts
 DEFAULT_TIMEOUT_SECONDS = 2
 MAX_OUTPUT_BYTES = 65536  # 64KB max output
 MAX_CODE_BYTES = 50000    # 50KB max code
+REMOTE_REQUEST_TIMEOUT_BUFFER_SECONDS = 25
 
 # Cache Docker availability check
 _docker_available = None
@@ -183,8 +184,10 @@ def _run_in_remote_sandbox(payload: dict, timeout: int) -> SandboxResult:
         },
     )
 
+    request_timeout = max(timeout + 3, timeout + REMOTE_REQUEST_TIMEOUT_BUFFER_SECONDS)
+
     try:
-        with urllib_request.urlopen(req, timeout=timeout + 3) as response:
+        with urllib_request.urlopen(req, timeout=request_timeout) as response:
             raw = response.read()
     except urllib_error.HTTPError as e:
         error_body = e.read().decode('utf-8', errors='replace')[:500]
@@ -200,7 +203,7 @@ def _run_in_remote_sandbox(payload: dict, timeout: int) -> SandboxResult:
             stdout='',
             stderr='',
             exit_code=-1,
-            timed_out=isinstance(getattr(e, 'reason', None), socket.timeout),
+            timed_out=False,
             error=f'Remote judge unavailable: {str(e.reason)}',
         )
     except socket.timeout:
@@ -208,8 +211,8 @@ def _run_in_remote_sandbox(payload: dict, timeout: int) -> SandboxResult:
             stdout='',
             stderr='',
             exit_code=-1,
-            timed_out=True,
-            error='Remote judge timed out.',
+            timed_out=False,
+            error='Remote judge request timed out before receiving a response.',
         )
     except Exception as e:
         return SandboxResult(
