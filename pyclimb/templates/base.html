@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}PyClimb{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'pyclimb/images/favicon.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     {% block extra_head %}{% endblock %}
     <style>
       :root {
@@ -20,14 +23,20 @@
         --success: #d98b63;
         --error: #c0392b;
         --warning: #e9c282;
+        --font-body: "Pixelify Sans", "Courier New", monospace;
+        --font-display: "Press Start 2P", "Courier New", monospace;
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: "Garamond", "Times New Roman", serif;
+        font-family: var(--font-body);
         color: var(--ink);
         background: radial-gradient(1200px 600px at 10% 0%, #fff4de 0%, var(--bg) 60%);
         min-height: 100vh;
+      }
+      h1, h2, h3, h4, h5, h6,
+      nav.site-nav .brand {
+        font-family: var(--font-display);
       }
       
       /* Navigation */
