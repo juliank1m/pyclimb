@@ -20,10 +20,10 @@ header.page-header p.subtitle {
 .leaderboard-container {
   max-width: 800px;
   margin: 32px auto;
-  background: var(--card);
-  border-radius: 16px;
-  border: 1px solid #efe7d7;
-  box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+  background: linear-gradient(180deg, #fffaf0 0%, #fff3dc 100%);
+  border-radius: 0;
+  border: 2px solid var(--pixel-border);
+  box-shadow: 4px 4px 0 #dfbd93;
   overflow: hidden;
 }
 .leaderboard-table {
@@ -37,7 +37,7 @@ header.page-header p.subtitle {
   border-bottom: 1px solid #efe7d7;
 }
 .leaderboard-table th {
-  background: var(--bg);
+  background: #fff0d5;
   font-weight: 600;
   font-size: 0.85rem;
   color: var(--muted);
@@ -48,7 +48,7 @@ header.page-header p.subtitle {
   border-bottom: none;
 }
 .leaderboard-table tr:hover {
-  background: var(--bg);
+  background: #fff7e8;
 }
 .rank-cell {
   width: 60px;
@@ -69,7 +69,8 @@ header.page-header p.subtitle {
 }
 .diff-badge {
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 0;
+  border: 1px solid currentColor;
   font-weight: 500;
 }
 .diff-badge.easy {
@@ -110,8 +111,10 @@ header.page-header p.subtitle {
   max-width: 800px;
   margin: 16px auto;
   padding: 12px 16px;
-  background: var(--bg);
-  border-radius: 8px;
+  background: #fff8e8;
+  border: 2px solid var(--pixel-border);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #dcb88d;
   font-size: 0.9rem;
   color: var(--muted);
   text-align: center;

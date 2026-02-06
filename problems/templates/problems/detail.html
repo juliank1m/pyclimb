@@ -3,6 +3,10 @@
 {% block title %}{{ problem.title }} | PyClimb{% endblock %}
 
 {% block extra_styles %}
+.page-content {
+  max-width: 1320px;
+}
+
 header.problem-header {
   margin: 0 0 24px;
   padding: 24px;
@@ -13,7 +17,10 @@ header.problem-header {
 }
 header.problem-header h1 {
   margin: 8px 0 8px;
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.4rem, 2.5vw, 2.1rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .difficulty {
   display: inline-block;
@@ -246,7 +253,10 @@ header.submit-header {
 }
 header.submit-header h1 {
   margin: 0;
-  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 textarea#id_code {
   width: 100%;

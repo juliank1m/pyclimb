@@ -29,9 +29,10 @@
 .toc {
   position: sticky;
   top: 24px;
-  background: var(--card);
-  border: 1px solid #efe7d7;
-  border-radius: 12px;
+  background: #fff8e8;
+  border: 2px solid var(--pixel-border);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #dfbd93;
   padding: 16px;
 }
 
@@ -59,18 +60,21 @@
   font-size: 0.9rem;
   color: var(--muted);
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 0;
+  border: 1px solid transparent;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .toc a:hover {
-  background: var(--bg);
-  color: var(--accent);
+  background: #ffe6bd;
+  color: #1e1a14;
+  border-color: #d6a16d;
 }
 
 .toc a.active {
-  background: var(--accent);
-  color: white;
+  background: #ffd09a;
+  color: #1e1a14;
+  border-color: var(--pixel-border);
 }
 
 /* Main content */
@@ -92,10 +96,10 @@ a.back {
 header.lesson-header {
   margin-bottom: 24px;
   padding: 24px;
-  background: var(--card);
-  border-radius: 16px;
-  border: 1px solid #efe7d7;
-  box-shadow: 0 8px 20px rgba(34, 32, 19, 0.08);
+  background: linear-gradient(180deg, #fffaf0 0%, #fff3dc 100%);
+  border-radius: 0;
+  border: 2px solid var(--pixel-border);
+  box-shadow: 4px 4px 0 #dfbd93;
 }
 
 header.lesson-header .breadcrumb {
@@ -121,16 +125,18 @@ header.lesson-header h1 {
   font-weight: 600;
   color: var(--warning);
   background: #fff3cd;
-  border-radius: 999px;
+  border: 2px solid #a36c2c;
+  border-radius: 0;
   margin-left: 12px;
 }
 
 /* Lesson content */
 .lesson-content {
   padding: 28px 32px;
-  background: var(--card);
-  border-radius: 16px;
-  border: 1px solid #efe7d7;
+  background: #fffef8;
+  border-radius: 0;
+  border: 2px solid var(--pixel-border);
+  box-shadow: 4px 4px 0 #dfbd93;
   line-height: 1.7;
   font-size: 1.05rem;
 }
@@ -174,24 +180,32 @@ header.lesson-header h1 {
 }
 
 .lesson-content code {
-  background: #f4f1ea;
-  padding: 2px 6px;
-  border-radius: 4px;
   font-family: "SF Mono", "Menlo", monospace;
   font-size: 0.9em;
+}
+.lesson-content p code,
+.lesson-content li code,
+.lesson-content td code,
+.lesson-content blockquote code {
+  background: #f4f1ea;
+  padding: 2px 6px;
+  border-radius: 0;
+  border: 1px solid #d8c3a0;
 }
 
 .lesson-content pre {
   margin: 1.5em 0;
   padding: 16px 20px;
   background: #1e1e1e;
-  border-radius: 10px;
+  border-radius: 0;
+  border: 2px solid #3b2f22;
   overflow-x: auto;
 }
 
 .lesson-content pre code {
   background: none;
   padding: 0;
+  border: 0;
   color: #d4d4d4;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -200,7 +214,8 @@ header.lesson-header h1 {
 /* Code highlighting */
 .lesson-content .highlight {
   margin: 1.5em 0;
-  border-radius: 10px;
+  border-radius: 0;
+  border: 2px solid #3b2f22;
   overflow: hidden;
 }
 
@@ -214,8 +229,9 @@ header.lesson-header h1 {
   margin: 1.5em 0;
   padding: 12px 20px;
   background: #f8f6f0;
-  border-left: 4px solid var(--accent);
-  border-radius: 0 8px 8px 0;
+  border: 2px solid #d6a16d;
+  border-left: 6px solid var(--accent);
+  border-radius: 0;
 }
 
 .lesson-content blockquote p {
@@ -257,18 +273,20 @@ header.lesson-header h1 {
   align-items: center;
   gap: 8px;
   padding: 14px 20px;
-  background: var(--card);
-  border: 1px solid #efe7d7;
-  border-radius: 10px;
+  background: #fff8e8;
+  border: 2px solid var(--pixel-border);
+  border-radius: 0;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 3px 3px 0 #dfbd93;
+  transition: transform 120ms ease, box-shadow 120ms ease;
   max-width: 45%;
 }
 
 .lesson-nav a:hover {
-  border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(34, 32, 19, 0.08);
+  border-color: var(--pixel-border);
+  box-shadow: 2px 2px 0 #b4784d;
+  transform: translate(1px, 1px);
 }
 
 .lesson-nav .prev {
@@ -296,9 +314,10 @@ header.lesson-header h1 {
 .practice-section {
   margin-top: 24px;
   padding: 20px 24px;
-  background: var(--card);
-  border-radius: 14px;
-  border: 1px solid #efe7d7;
+  background: #fff8e8;
+  border-radius: 0;
+  border: 2px solid var(--pixel-border);
+  box-shadow: 3px 3px 0 #dfbd93;
 }
 
 .practice-section h2 {
@@ -326,15 +345,19 @@ header.lesson-header h1 {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--bg);
-  border-radius: 8px;
+  background: #fff1d7;
+  border: 2px solid #d8a46f;
+  border-radius: 0;
   text-decoration: none;
   color: inherit;
-  transition: background 0.15s ease;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 2px 2px 0 #dfbd93;
 }
 
 .problem-list a:hover {
-  background: #efe7d7;
+  background: #ffd9a4;
+  box-shadow: 1px 1px 0 #b4784d;
+  transform: translate(1px, 1px);
 }
 
 .problem-list .problem-title {
@@ -345,7 +368,8 @@ header.lesson-header h1 {
 .problem-list .difficulty {
   font-size: 0.8rem;
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: 0;
+  border: 1px solid currentColor;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
