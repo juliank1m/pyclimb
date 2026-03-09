@@ -41,8 +41,7 @@ def home(request):
         )
         solved_count = len(solved_problem_ids)
     
-    # Total users and submissions for site stats
-    total_users = User.objects.count()
+    # Total submissions for site stats
     total_submissions = Submission.objects.count()
     
     # Learning content stats
@@ -57,7 +56,6 @@ def home(request):
         'featured_problems': featured_problems,
         'solved_count': solved_count,
         'solved_problem_ids': solved_problem_ids,
-        'total_users': total_users,
         'total_submissions': total_submissions,
         'total_courses': total_courses,
         'total_lessons': total_lessons,
