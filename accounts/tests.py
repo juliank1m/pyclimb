@@ -3,7 +3,7 @@ Tests for the accounts app.
 
 Focuses on:
 - UserProfile creation
-- Email verification flow
+- User registration
 """
 import pytest
 from django.test import TestCase, Client
@@ -67,53 +67,6 @@ class UserProfileTests(TestCase):
             password='testpass123'
         )
         self.assertIn('testuser', str(user.profile))
-
-
-@pytest.mark.django_db
-class EmailVerificationViewTests(TestCase):
-    """Tests for email verification views."""
-
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123'
-        )
-
-    def test_verify_with_valid_token(self):
-        """Valid token should verify the user."""
-        profile = self.user.profile
-        token = profile.generate_verification_token()
-        
-        response = self.client.get(
-            reverse('verify_email', kwargs={'token': token})
-        )
-        
-        profile.refresh_from_db()
-        self.assertTrue(profile.is_verified)
-        # Redirects to profile, which then redirects to login (user not logged in)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('profile'))
-
-    def test_verify_with_invalid_token(self):
-        """Invalid token should return 404."""
-        response = self.client.get(
-            reverse('verify_email', kwargs={'token': 'invalid-token'})
-        )
-        self.assertEqual(response.status_code, 404)
-
-    def test_resend_verification_requires_login(self):
-        """Resend verification should require authentication."""
-        response = self.client.get(reverse('resend_verification'))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('login', response.url)
-
-    def test_resend_verification_logged_in(self):
-        """Logged in user can resend verification."""
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(reverse('resend_verification'))
-        self.assertRedirects(response, reverse('profile'))
 
 
 @pytest.mark.django_db

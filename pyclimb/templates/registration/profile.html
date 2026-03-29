@@ -170,32 +170,6 @@
   padding: 32px;
   color: var(--muted);
 }
-.verification-banner {
-  padding: 16px 20px;
-  background: #fff8e6;
-  border: 2px solid #a36c2c;
-  border-radius: 0;
-  box-shadow: 3px 3px 0 #dfbd93;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.verification-banner p {
-  margin: 0;
-  color: #856404;
-  font-size: 0.95rem;
-}
-.verification-banner a {
-  color: var(--accent);
-  font-weight: 600;
-  text-decoration: none;
-}
-.verification-banner a:hover {
-  text-decoration: underline;
-}
 .verified-badge {
   display: inline-flex;
   align-items: center;
@@ -224,12 +198,6 @@
   {% endfor %}
 {% endif %}
 
-{% if user_profile and not user_profile.is_verified and user.email %}
-  <div class="verification-banner">
-    <p>Your email address has not been verified. Please check your inbox for the verification link.</p>
-    <a href="{% url 'resend_verification' %}">Resend verification email</a>
-  </div>
-{% endif %}
 
 <div class="profile-header">
   <h1>

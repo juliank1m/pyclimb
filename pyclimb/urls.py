@@ -39,8 +39,6 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('accounts/register/', views.register, name='register'),
     path('accounts/profile/', views.profile, name='profile'),
-    path('accounts/verify/<str:token>/', views.verify_email, name='verify_email'),
-    path('accounts/resend-verification/', views.resend_verification, name='resend_verification'),
     
     # Password reset
     path('accounts/password_reset/', 

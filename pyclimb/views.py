@@ -1,12 +1,10 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum, Case, When, IntegerField
-from django.contrib import messages
+from django.db.models import Count
 
 from .forms import RegistrationForm
 from accounts.models import UserProfile
@@ -64,36 +62,6 @@ def home(request):
     return render(request, 'home.html', context)
 
 
-def send_verification_email(request, user, profile):
-    """Send email verification link to user."""
-    token = profile.generate_verification_token()
-    verify_url = request.build_absolute_uri(f'/accounts/verify/{token}/')
-    
-    subject = 'Verify your PyClimb account'
-    message = f"""Hi {user.username},
-
-Thanks for registering on PyClimb!
-
-Please click the link below to verify your email address:
-
-{verify_url}
-
-If you didn't create an account, you can ignore this email.
-
-- The PyClimb Team
-"""
-    try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=True,  # Don't fail registration if email fails
-        )
-    except Exception:
-        pass  # Email is best-effort
-
-
 def register(request):
     """Handle user registration."""
     if request.user.is_authenticated:
@@ -105,33 +73,11 @@ def register(request):
             user = form.save()
             login(request, user)
             
-            # Send verification email if user provided an email
-            if user.email:
-                try:
-                    profile = user.profile
-                    send_verification_email(request, user, profile)
-                    messages.info(request, 'A verification email has been sent to your email address.')
-                except UserProfile.DoesNotExist:
-                    pass  # Profile not created yet (shouldn't happen with signal)
-            
             return redirect(settings.LOGIN_REDIRECT_URL)
     else:
         form = RegistrationForm()
     
     return render(request, 'registration/register.html', {'form': form})
-
-
-def verify_email(request, token):
-    """Handle email verification via token."""
-    profile = get_object_or_404(UserProfile, verification_token=token)
-    
-    if profile.verification_token and profile.verification_token == token:
-        profile.verify()
-        messages.success(request, 'Your email has been verified successfully!')
-        return redirect('profile')
-    
-    messages.error(request, 'Invalid or expired verification link.')
-    return redirect('profile')
 
 
 @login_required
@@ -197,28 +143,6 @@ def profile(request):
     }
     
     return render(request, 'registration/profile.html', context)
-
-
-@login_required
-def resend_verification(request):
-    """Resend verification email."""
-    user = request.user
-    
-    if not user.email:
-        messages.error(request, 'Please add an email address to your account first.')
-        return redirect('profile')
-    
-    try:
-        profile = user.profile
-        if profile.is_verified:
-            messages.info(request, 'Your email is already verified.')
-        else:
-            send_verification_email(request, user, profile)
-            messages.success(request, 'Verification email sent!')
-    except UserProfile.DoesNotExist:
-        messages.error(request, 'Profile not found.')
-    
-    return redirect('profile')
 
 
 def leaderboard(request):
